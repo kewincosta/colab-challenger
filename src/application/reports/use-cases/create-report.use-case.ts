@@ -1,6 +1,7 @@
 import { Report } from '../../../domain/reports/entities/report.entity';
 import { Location, LocationRaw } from '../../../domain/reports/value-objects/location.value-object';
 import { ReportRepository } from '../../../domain/reports/repositories/report.repository';
+import { AppLoggerPort } from '../../ports/logger.port';
 
 export interface CreateReportCommand {
   title: string;
@@ -9,7 +10,7 @@ export interface CreateReportCommand {
 }
 
 export interface CreateReportResult {
-  id: string | undefined;
+  id: string;
   title: string;
   description: string;
   location: LocationRaw;
@@ -17,9 +18,14 @@ export interface CreateReportResult {
 }
 
 export class CreateReportUseCase {
-  constructor(private readonly reportRepository: ReportRepository) {}
+  constructor(
+    private readonly reportRepository: ReportRepository,
+    private readonly logger: AppLoggerPort,
+  ) {}
 
   async execute(command: CreateReportCommand): Promise<CreateReportResult> {
+    this.logger.log(`Creating report: "${command.title}"`);
+
     const location = Location.create(command.location);
 
     const report = Report.create({
@@ -30,11 +36,18 @@ export class CreateReportUseCase {
 
     const persisted = await this.reportRepository.save(report);
 
+    const id = persisted.getId();
+    if (!id) {
+      throw new Error('Report ID must be defined after persistence');
+    }
+
+    this.logger.log(`Report created successfully with id: ${id}`);
+
     return {
-      id: persisted.getId(),
+      id,
       title: persisted.getTitle(),
       description: persisted.getDescription(),
-      location: persisted.getLocation().getValue(),
+      location: persisted.getLocationRaw(),
       createdAt: persisted.getCreatedAt(),
     };
   }

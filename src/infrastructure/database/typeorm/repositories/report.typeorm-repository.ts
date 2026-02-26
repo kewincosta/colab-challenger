@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { ReportRepository } from '../../../../domain/reports/repositories/report.repository';
 import { Report } from '../../../../domain/reports/entities/report.entity';
-import { Location, LocationRaw } from '../../../../domain/reports/value-objects/location.value-object';
+import { Location } from '../../../../domain/reports/value-objects/location.value-object';
 import { ReportOrmEntity } from '../entities/report.orm-entity';
 
 export class ReportTypeOrmRepository implements ReportRepository {
@@ -9,7 +9,7 @@ export class ReportTypeOrmRepository implements ReportRepository {
 
   async save(report: Report): Promise<Report> {
     const entity = new ReportOrmEntity();
-    const location = report.getLocation().getValue();
+    const location = report.getLocationRaw();
 
     if (report.getId()) {
       entity.id = report.getId() as string;
@@ -20,7 +20,7 @@ export class ReportTypeOrmRepository implements ReportRepository {
 
     const saved = await this.ormRepository.save(entity);
 
-    const restoredLocation = Location.create(saved.location as LocationRaw);
+    const restoredLocation = Location.create(saved.location);
 
     return Report.restore(
       {

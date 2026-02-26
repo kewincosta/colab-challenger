@@ -1,7 +1,8 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { DomainExceptionFilter } from '../../src/shared/filters/domain-exception.filter';
 
 describe('Reports API (e2e)', () => {
   let app: INestApplication;
@@ -12,6 +13,20 @@ describe('Reports API (e2e)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+
+    app.setGlobalPrefix('api');
+
+    app.useGlobalFilters(new DomainExceptionFilter());
+
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    );
+
     await app.init();
   });
 

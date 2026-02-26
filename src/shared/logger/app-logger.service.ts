@@ -1,7 +1,8 @@
 import { Injectable, LoggerService as NestLoggerService, Logger } from '@nestjs/common';
+import { AppLoggerPort } from '../../application/ports/logger.port';
 
 @Injectable()
-export class AppLogger implements NestLoggerService {
+export class AppLogger implements NestLoggerService, AppLoggerPort {
   private readonly logger = new Logger('App');
 
   log(message: string) {

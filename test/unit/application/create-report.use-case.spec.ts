@@ -2,6 +2,7 @@ import { CreateReportUseCase } from '../../../src/application/reports/use-cases/
 import { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
 import { Location } from '../../../src/domain/reports/value-objects/location.value-object';
+import { AppLoggerPort } from '../../../src/application/ports/logger.port';
 
 class InMemoryReportRepository implements ReportRepository {
   public items: Report[] = [];
@@ -21,10 +22,16 @@ class InMemoryReportRepository implements ReportRepository {
   }
 }
 
+const mockLogger: AppLoggerPort = {
+  log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+};
+
 describe('CreateReportUseCase', () => {
   it('creates and persists a report', async () => {
     const repo = new InMemoryReportRepository();
-    const useCase = new CreateReportUseCase(repo);
+    const useCase = new CreateReportUseCase(repo, mockLogger);
 
     const result = await useCase.execute({
       title: 'Broken street light',
@@ -41,7 +48,7 @@ describe('CreateReportUseCase', () => {
 
   it('throws when location is invalid', async () => {
     const repo = new InMemoryReportRepository();
-    const useCase = new CreateReportUseCase(repo);
+    const useCase = new CreateReportUseCase(repo, mockLogger);
 
     await expect(
       useCase.execute({

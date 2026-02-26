@@ -8,7 +8,7 @@ This backend is designed to support AI-powered urban triage as a first-class con
   - Fetching reports.
   - Sending them to a `TriageService`.
   - Persisting triage results and updating domain entities.
-- Example future use case: `TriagetReportUseCase` that takes a report ID, loads the report, calls the AI service, validates the response, and persists structured triage data.
+- Example future use case: `TriageReportUseCase` that takes a report ID, loads the report, calls the AI service, validates the response, and persists structured triage data.
 
 ## Avoiding LLM Provider Coupling
 

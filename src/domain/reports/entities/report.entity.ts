@@ -1,4 +1,6 @@
-import { Location } from '../value-objects/location.value-object';
+import { Location, LocationRaw } from '../value-objects/location.value-object';
+import { ReportTitle } from '../value-objects/report-title.value-object';
+import { ReportDescription } from '../value-objects/report-description.value-object';
 
 export interface ReportProps {
   title: string;
@@ -9,23 +11,15 @@ export interface ReportProps {
 
 export class Report {
   private id?: string;
-  private readonly title: string;
-  private description: string;
+  private readonly title: ReportTitle;
+  private description: ReportDescription;
   private location: Location;
   private readonly createdAt: Date;
 
   private constructor(props: ReportProps, id?: string) {
-    if (!props.title || props.title.trim().length === 0) {
-      throw new Error('Report title must not be empty');
-    }
-
-    if (!props.description || props.description.trim().length === 0) {
-      throw new Error('Report description must not be empty');
-    }
-
     this.id = id;
-    this.title = props.title.trim();
-    this.description = props.description.trim();
+    this.title = ReportTitle.create(props.title);
+    this.description = ReportDescription.create(props.description);
     this.location = props.location;
     this.createdAt = props.createdAt ?? new Date();
   }
@@ -39,10 +33,7 @@ export class Report {
   }
 
   updateDescription(newDescription: string): void {
-    if (!newDescription || newDescription.trim().length === 0) {
-      throw new Error('Report description must not be empty');
-    }
-    this.description = newDescription.trim();
+    this.description = ReportDescription.create(newDescription);
   }
 
   moveTo(newLocation: Location): void {
@@ -54,15 +45,19 @@ export class Report {
   }
 
   getTitle(): string {
-    return this.title;
+    return this.title.getValue();
   }
 
   getDescription(): string {
-    return this.description;
+    return this.description.getValue();
   }
 
   getLocation(): Location {
     return this.location;
+  }
+
+  getLocationRaw(): LocationRaw {
+    return this.location.getValue();
   }
 
   getCreatedAt(): Date {

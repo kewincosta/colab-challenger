@@ -12,7 +12,7 @@ export class ReportOrmEntity {
   description!: string;
 
   @Column({ type: 'jsonb' })
-  location!: unknown;
+  location!: string | Record<string, unknown>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

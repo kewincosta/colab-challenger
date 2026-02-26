@@ -1,24 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Validate } from 'class-validator';
-import { Type } from 'class-transformer';
-import { LocationFormatConstraint } from '../validators/location-format.validator';
-import { LocationRaw } from '../../../domain/reports/value-objects/location.value-object';
 
-export class CreateReportDto {
+export class ReportResponseDto {
+  @ApiProperty({
+    description: 'Unique identifier of the report',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'Timestamp when the report was created',
+    example: '2026-01-15T10:30:00.000Z',
+  })
+  createdAt!: Date;
+
   @ApiProperty({
     description: 'Short title summarizing the urban issue',
     example: 'Pothole on Main Street',
   })
-  @IsString()
-  @IsNotEmpty()
   title!: string;
 
   @ApiProperty({
     description: 'Detailed description of the issue',
     example: 'Large pothole near the intersection causing traffic delays.',
   })
-  @IsString()
-  @IsNotEmpty()
   description!: string;
 
   @ApiProperty({
@@ -32,7 +36,5 @@ export class CreateReportDto {
       },
     ],
   })
-  @Type(() => Object)
-  @Validate(LocationFormatConstraint)
-  location!: LocationRaw;
+  location!: string | Record<string, unknown>;
 }
