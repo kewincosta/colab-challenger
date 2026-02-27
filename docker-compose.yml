@@ -19,7 +19,7 @@ services:
     container_name: urban_triage_app
     restart: unless-stopped
     env_file:
-      - .env.example
+      - .env
     environment:
       DB_HOST: postgres
     depends_on:

@@ -18,6 +18,12 @@ export class ReportTypeOrmRepository implements ReportRepository {
     entity.description = report.getDescription();
     entity.location = location;
 
+    const aiClassification = report.getAiClassification();
+    entity.category = aiClassification?.category ?? null;
+    entity.priority = aiClassification?.priority ?? null;
+    entity.technicalSummary = aiClassification?.technicalSummary ?? null;
+    entity.newCategorySuggestion = aiClassification?.newCategorySuggestion ?? null;
+
     const saved = await this.ormRepository.save(entity);
 
     const restoredLocation = Location.create(saved.location);
@@ -28,6 +34,14 @@ export class ReportTypeOrmRepository implements ReportRepository {
         description: saved.description,
         location: restoredLocation,
         createdAt: saved.createdAt,
+        aiClassification: saved.category
+          ? {
+              category: saved.category,
+              priority: saved.priority!,
+              technicalSummary: saved.technicalSummary!,
+              newCategorySuggestion: saved.newCategorySuggestion,
+            }
+          : null,
       },
       saved.id,
     );

@@ -2,11 +2,19 @@ import { Location, LocationRaw } from '../value-objects/location.value-object';
 import { ReportTitle } from '../value-objects/report-title.value-object';
 import { ReportDescription } from '../value-objects/report-description.value-object';
 
+export interface AiClassification {
+  readonly category: string;
+  readonly newCategorySuggestion: string | null;
+  readonly priority: string;
+  readonly technicalSummary: string;
+}
+
 export interface ReportProps {
   title: string;
   description: string;
   location: Location;
   createdAt?: Date;
+  aiClassification?: AiClassification | null;
 }
 
 export class Report {
@@ -15,6 +23,7 @@ export class Report {
   private description: ReportDescription;
   private location: Location;
   private readonly createdAt: Date;
+  private aiClassification: AiClassification | null;
 
   private constructor(props: ReportProps, id?: string) {
     this.id = id;
@@ -22,6 +31,7 @@ export class Report {
     this.description = ReportDescription.create(props.description);
     this.location = props.location;
     this.createdAt = props.createdAt ?? new Date();
+    this.aiClassification = props.aiClassification ?? null;
   }
 
   static create(props: ReportProps): Report {
@@ -38,6 +48,10 @@ export class Report {
 
   moveTo(newLocation: Location): void {
     this.location = newLocation;
+  }
+
+  enrichWithAiClassification(classification: AiClassification): void {
+    this.aiClassification = classification;
   }
 
   getId(): string | undefined {
@@ -62,5 +76,9 @@ export class Report {
 
   getCreatedAt(): Date {
     return this.createdAt;
+  }
+
+  getAiClassification(): AiClassification | null {
+    return this.aiClassification;
   }
 }

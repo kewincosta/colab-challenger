@@ -29,6 +29,10 @@ export class ReportsController {
       title: result.title,
       description: result.description,
       location: result.location,
+      category: result.category,
+      priority: result.priority,
+      technicalSummary: result.technicalSummary,
+      newCategorySuggestion: result.newCategorySuggestion,
     };
   }
 }

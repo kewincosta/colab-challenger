@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ReportResponseDto {
   @ApiProperty({
@@ -37,4 +37,32 @@ export class ReportResponseDto {
     ],
   })
   location!: string | Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    description: 'AI-assigned category for the urban issue',
+    example: 'Public Road',
+    nullable: true,
+  })
+  category!: string | null;
+
+  @ApiPropertyOptional({
+    description: 'AI-assigned priority level',
+    example: 'High',
+    nullable: true,
+  })
+  priority!: string | null;
+
+  @ApiPropertyOptional({
+    description: 'AI-generated technical summary of the issue',
+    example: 'Road surface degradation requiring immediate patching to prevent vehicle damage.',
+    nullable: true,
+  })
+  technicalSummary!: string | null;
+
+  @ApiPropertyOptional({
+    description: 'AI-suggested new category when classified as "Other"',
+    example: 'Urban Fauna',
+    nullable: true,
+  })
+  newCategorySuggestion!: string | null;
 }
