@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
 import { Location } from '../../../src/domain/reports/value-objects/location.value-object';
+import { ClassificationStatus } from '../../../src/domain/reports/value-objects/classification-status.value-object';
 
 describe('Report Entity', () => {
   const validProps = () => ({
@@ -9,17 +10,21 @@ describe('Report Entity', () => {
     location: Location.create('Rua das Flores, 123'),
   });
 
-  it('creates a report without AI classification', () => {
+  it('creates a report with PENDING classification status', () => {
     const report = Report.create(validProps());
 
     expect(report.getId()).toBeUndefined();
     expect(report.getTitle()).toBe('Broken streetlight');
     expect(report.getDescription()).toBe('The light on Rua das Flores has been out for 3 days.');
     expect(report.getAiClassification()).toBeNull();
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.PENDING);
+    expect(report.getClassificationAttempts()).toBe(0);
+    expect(report.getLastClassificationError()).toBeNull();
+    expect(report.getClassifiedAt()).toBeNull();
     expect(report.getCreatedAt()).toBeInstanceOf(Date);
   });
 
-  it('restores a report with AI classification', () => {
+  it('restores a report with AI classification and DONE status', () => {
     const report = Report.restore(
       {
         ...validProps(),
@@ -30,11 +35,14 @@ describe('Report Entity', () => {
           technicalSummary: 'Streetlight malfunction.',
           newCategorySuggestion: null,
         },
+        classificationStatus: ClassificationStatus.DONE,
+        classifiedAt: new Date('2025-01-15T10:01:00Z'),
       },
       'abc-123',
     );
 
     expect(report.getId()).toBe('abc-123');
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
     expect(report.getAiClassification()).toEqual({
       category: 'Lighting',
       priority: 'High',
@@ -43,17 +51,61 @@ describe('Report Entity', () => {
     });
   });
 
-  it('enriches a report with AI classification', () => {
+  // ── Classification lifecycle ────────────────────────────────────────
+
+  it('startClassification transitions PENDING → PROCESSING', () => {
     const report = Report.create(validProps());
-    expect(report.getAiClassification()).toBeNull();
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.PENDING);
 
-    report.enrichWithAiClassification({
-      category: 'Public Road',
-      priority: 'Medium',
-      technicalSummary: 'Surface degradation detected.',
-      newCategorySuggestion: null,
-    });
+    report.startClassification();
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.PROCESSING);
+  });
 
+  it('startClassification is a no-op when already DONE', () => {
+    const report = Report.restore(
+      {
+        ...validProps(),
+        classificationStatus: ClassificationStatus.DONE,
+        aiClassification: {
+          category: 'Lighting',
+          priority: 'High',
+          technicalSummary: 'Done.',
+          newCategorySuggestion: null,
+        },
+      },
+      'abc-123',
+    );
+
+    report.startClassification();
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
+  });
+
+  it('startClassification allows FAILED → PROCESSING (retry)', () => {
+    const report = Report.create(validProps());
+    report.failClassification('timeout', 1);
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.FAILED);
+
+    report.startClassification();
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.PROCESSING);
+  });
+
+  it('completeClassification sets AI data, DONE status, and classifiedAt', () => {
+    const report = Report.create(validProps());
+    report.startClassification();
+
+    const completedAt = new Date('2026-02-27T12:00:00Z');
+    report.completeClassification(
+      {
+        category: 'Public Road',
+        priority: 'Medium',
+        technicalSummary: 'Surface degradation detected.',
+        newCategorySuggestion: null,
+      },
+      completedAt,
+    );
+
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
+    expect(report.getClassifiedAt()).toEqual(completedAt);
     expect(report.getAiClassification()).toEqual({
       category: 'Public Road',
       priority: 'Medium',
@@ -62,41 +114,17 @@ describe('Report Entity', () => {
     });
   });
 
-  it('enriches a report with "Other" category and suggestion', () => {
+  it('failClassification records error and attempt count', () => {
     const report = Report.create(validProps());
+    report.startClassification();
+    report.failClassification('AI timeout', 2);
 
-    report.enrichWithAiClassification({
-      category: 'Other',
-      priority: 'Low',
-      technicalSummary: 'Unusual urban fauna spotted.',
-      newCategorySuggestion: 'Urban Fauna',
-    });
-
-    const ai = report.getAiClassification();
-    expect(ai?.category).toBe('Other');
-    expect(ai?.newCategorySuggestion).toBe('Urban Fauna');
+    expect(report.getClassificationStatus()).toBe(ClassificationStatus.FAILED);
+    expect(report.getLastClassificationError()).toBe('AI timeout');
+    expect(report.getClassificationAttempts()).toBe(2);
   });
 
-  it('overwrites previous AI classification when enriched again', () => {
-    const report = Report.create(validProps());
-
-    report.enrichWithAiClassification({
-      category: 'Lighting',
-      priority: 'High',
-      technicalSummary: 'First classification.',
-      newCategorySuggestion: null,
-    });
-
-    report.enrichWithAiClassification({
-      category: 'Sanitation',
-      priority: 'Low',
-      technicalSummary: 'Second classification.',
-      newCategorySuggestion: null,
-    });
-
-    expect(report.getAiClassification()?.category).toBe('Sanitation');
-    expect(report.getAiClassification()?.technicalSummary).toBe('Second classification.');
-  });
+  // ── Mutation methods ────────────────────────────────────────────────
 
   it('updates description via updateDescription()', () => {
     const report = Report.create(validProps());

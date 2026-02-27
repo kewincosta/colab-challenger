@@ -26,6 +26,18 @@ export class ReportOrmEntity {
   @Column({ name: 'new_category_suggestion', type: 'varchar', length: 255, nullable: true })
   newCategorySuggestion!: string | null;
 
+  @Column({ name: 'classification_status', type: 'varchar', length: 20, default: 'PENDING' })
+  classificationStatus!: string;
+
+  @Column({ name: 'classification_attempts', type: 'int', default: 0 })
+  classificationAttempts!: number;
+
+  @Column({ name: 'last_classification_error', type: 'text', nullable: true })
+  lastClassificationError!: string | null;
+
+  @Column({ name: 'classified_at', type: 'timestamp', nullable: true })
+  classifiedAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

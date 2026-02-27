@@ -1,10 +1,10 @@
 import { Report } from '../../../domain/reports/entities/report.entity';
 import { Location, LocationRaw } from '../../../domain/reports/value-objects/location.value-object';
+import { ClassificationStatus } from '../../../domain/reports/value-objects/classification-status.value-object';
 import { ReportRepository } from '../../../domain/reports/repositories/report.repository';
 import { AppLoggerPort } from '../../ports/logger.port';
-import { ClassifyReportPort } from '../../ports/classify-report.port';
+import { QueueProducerPort } from '../../ports/queue-producer.port';
 import { ClockPort } from '../../ports/clock.port';
-import { toAiClassification } from '../../ai/mappers/classification.mapper';
 
 export interface CreateReportCommand {
   title: string;
@@ -18,6 +18,7 @@ export interface CreateReportResult {
   description: string;
   location: LocationRaw;
   createdAt: Date;
+  classificationStatus: ClassificationStatus;
   category: string | null;
   priority: string | null;
   technicalSummary: string | null;
@@ -28,7 +29,7 @@ export class CreateReportUseCase {
   constructor(
     private readonly reportRepository: ReportRepository,
     private readonly logger: AppLoggerPort,
-    private readonly classifyReport: ClassifyReportPort,
+    private readonly queueProducer: QueueProducerPort,
     private readonly clock: ClockPort,
   ) {}
 
@@ -44,24 +45,6 @@ export class CreateReportUseCase {
       createdAt: this.clock.now(),
     });
 
-    // AI classification — best-effort, failures should not block report creation
-    try {
-      const classification = await this.classifyReport.execute({
-        title: command.title,
-        description: command.description,
-        location: command.location,
-      });
-
-      report.enrichWithAiClassification(toAiClassification(classification));
-
-      this.logger.log(
-        `AI classification: category=${classification.category}, priority=${classification.priority}`,
-      );
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`AI classification failed (best-effort): ${message}`);
-    }
-
     const persisted = await this.reportRepository.save(report);
 
     const id = persisted.getId();
@@ -69,9 +52,9 @@ export class CreateReportUseCase {
       throw new Error('Report ID must be defined after persistence');
     }
 
-    this.logger.log(`Report created successfully with id: ${id}`);
+    await this.queueProducer.publishClassificationJob({ reportId: id });
 
-    const aiClassification = persisted.getAiClassification();
+    this.logger.log(`Report ${id} created, classification job published`);
 
     return {
       id,
@@ -79,10 +62,11 @@ export class CreateReportUseCase {
       description: persisted.getDescription(),
       location: persisted.getLocationRaw(),
       createdAt: persisted.getCreatedAt(),
-      category: aiClassification?.category ?? null,
-      priority: aiClassification?.priority ?? null,
-      technicalSummary: aiClassification?.technicalSummary ?? null,
-      newCategorySuggestion: aiClassification?.newCategorySuggestion ?? null,
+      classificationStatus: persisted.getClassificationStatus(),
+      category: null,
+      priority: null,
+      technicalSummary: null,
+      newCategorySuggestion: null,
     };
   }
 }

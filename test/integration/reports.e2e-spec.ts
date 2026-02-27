@@ -3,16 +3,9 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { AI_ENRICHMENT_SERVICE_TOKEN } from '../../src/shared/constants/tokens';
+import { QUEUE_PRODUCER_TOKEN } from '../../src/shared/constants/tokens';
 
-const defaultClassification = {
-  category: 'Waste',
-  new_category_suggestion: null,
-  priority: 'Medium',
-  technical_summary: 'Overflowing waste container requiring scheduled collection.',
-};
-
-const mockClassifyExecute = vi.fn();
+const mockPublishJob = vi.fn();
 
 describe('Reports API (e2e)', () => {
   let app: INestApplication;
@@ -21,8 +14,8 @@ describe('Reports API (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(AI_ENRICHMENT_SERVICE_TOKEN)
-      .useValue({ execute: mockClassifyExecute })
+      .overrideProvider(QUEUE_PRODUCER_TOKEN)
+      .useValue({ publishClassificationJob: mockPublishJob })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -42,15 +35,15 @@ describe('Reports API (e2e)', () => {
   });
 
   beforeEach(() => {
-    mockClassifyExecute.mockReset();
-    mockClassifyExecute.mockResolvedValue(defaultClassification);
+    mockPublishJob.mockReset();
+    mockPublishJob.mockResolvedValue(undefined);
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('/reports (POST) creates a report with AI classification', async () => {
+  it('/reports (POST) creates a report with PENDING classification', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/reports')
       .send({
@@ -68,12 +61,14 @@ describe('Reports API (e2e)', () => {
     expect(response.body.createdAt).toBeDefined();
     expect(response.body.title).toBe('Overflowing trash can');
     expect(response.body.description).toBe('Trash can overflowing in central park');
-    expect(response.body.category).toBe('Waste');
-    expect(response.body.priority).toBe('Medium');
-    expect(response.body.technicalSummary).toBe(
-      'Overflowing waste container requiring scheduled collection.',
-    );
+    expect(response.body.classificationStatus).toBe('PENDING');
+    expect(response.body.category).toBeNull();
+    expect(response.body.priority).toBeNull();
+    expect(response.body.technicalSummary).toBeNull();
     expect(response.body.newCategorySuggestion).toBeNull();
+    expect(mockPublishJob).toHaveBeenCalledWith({
+      reportId: response.body.id,
+    });
   });
 
   it('/reports (POST) returns 400 for invalid payload', async () => {
@@ -87,9 +82,7 @@ describe('Reports API (e2e)', () => {
       .expect(400);
   });
 
-  it('/reports (POST) creates report even when AI fails', async () => {
-    mockClassifyExecute.mockRejectedValue(new Error('AI service unavailable'));
-
+  it('/reports (POST) publishes classification job with correct payload', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/reports')
       .send({
@@ -99,11 +92,9 @@ describe('Reports API (e2e)', () => {
       })
       .expect(201);
 
-    expect(response.body.id).toBeDefined();
-    expect(response.body.title).toBe('Broken traffic light');
-    expect(response.body.category).toBeNull();
-    expect(response.body.priority).toBeNull();
-    expect(response.body.technicalSummary).toBeNull();
-    expect(response.body.newCategorySuggestion).toBeNull();
+    expect(mockPublishJob).toHaveBeenCalledOnce();
+    expect(mockPublishJob).toHaveBeenCalledWith({
+      reportId: response.body.id,
+    });
   });
 });

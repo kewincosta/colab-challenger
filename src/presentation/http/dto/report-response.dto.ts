@@ -38,6 +38,13 @@ export class ReportResponseDto {
   })
   location!: string | Record<string, unknown>;
 
+  @ApiProperty({
+    description: 'Current status of AI classification',
+    example: 'PENDING',
+    enum: ['PENDING', 'PROCESSING', 'DONE', 'FAILED'],
+  })
+  classificationStatus!: string;
+
   @ApiPropertyOptional({
     description: 'AI-assigned category for the urban issue',
     example: 'Public Road',

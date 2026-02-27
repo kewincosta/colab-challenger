@@ -29,6 +29,7 @@ export class ReportsController {
       title: result.title,
       description: result.description,
       location: result.location,
+      classificationStatus: result.classificationStatus,
       category: result.category,
       priority: result.priority,
       technicalSummary: result.technicalSummary,

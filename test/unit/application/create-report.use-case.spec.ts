@@ -2,8 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { CreateReportUseCase } from '../../../src/application/reports/use-cases/create-report.use-case';
 import { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
+import { ClassificationStatus } from '../../../src/domain/reports/value-objects/classification-status.value-object';
 import { AppLoggerPort } from '../../../src/application/ports/logger.port';
-import { ClassifyReportPort } from '../../../src/application/ports/classify-report.port';
+import { QueueProducerPort } from '../../../src/application/ports/queue-producer.port';
 import { ClockPort } from '../../../src/application/ports/clock.port';
 
 class InMemoryReportRepository implements ReportRepository {
@@ -17,11 +18,19 @@ class InMemoryReportRepository implements ReportRepository {
         location: report.getLocation(),
         createdAt: report.getCreatedAt(),
         aiClassification: report.getAiClassification(),
+        classificationStatus: report.getClassificationStatus(),
+        classificationAttempts: report.getClassificationAttempts(),
+        lastClassificationError: report.getLastClassificationError(),
+        classifiedAt: report.getClassifiedAt(),
       },
       'test-id',
     );
     this.items.push(restored);
     return restored;
+  }
+
+  async findById(id: string): Promise<Report | null> {
+    return this.items.find((r) => r.getId() === id) ?? null;
   }
 }
 
@@ -37,23 +46,18 @@ function createFakeClock(fixed?: Date): ClockPort {
   return { now: () => fixed ?? new Date('2026-01-15T10:00:00Z') };
 }
 
-function createMockClassifyReport(): ClassifyReportPort {
+function createMockQueueProducer(): QueueProducerPort {
   return {
-    execute: vi.fn().mockResolvedValue({
-      category: 'Lighting',
-      new_category_suggestion: null,
-      priority: 'High',
-      technical_summary: 'Streetlight malfunction requiring immediate repair.',
-    }),
+    publishClassificationJob: vi.fn().mockResolvedValue(undefined),
   };
 }
 
 describe('CreateReportUseCase', () => {
-  it('creates and persists a report with AI classification', async () => {
+  it('creates a report with PENDING status and publishes classification job', async () => {
     const repo = new InMemoryReportRepository();
-    const classifyReport = createMockClassifyReport();
+    const queueProducer = createMockQueueProducer();
     const clock = createFakeClock();
-    const useCase = new CreateReportUseCase(repo, createMockLogger(), classifyReport, clock);
+    const useCase = new CreateReportUseCase(repo, createMockLogger(), queueProducer, clock);
 
     const result = await useCase.execute({
       title: 'Broken street light',
@@ -61,24 +65,27 @@ describe('CreateReportUseCase', () => {
       location: '5th Avenue & Pine St',
     });
 
-    expect(result.id).toBeDefined();
+    expect(result.id).toBe('test-id');
     expect(result.title).toBe('Broken street light');
     expect(result.description).toBe('Street light not working on 5th Avenue');
     expect(result.location).toBe('5th Avenue & Pine St');
-    expect(result.category).toBe('Lighting');
-    expect(result.priority).toBe('High');
-    expect(result.technicalSummary).toBe('Streetlight malfunction requiring immediate repair.');
+    expect(result.classificationStatus).toBe(ClassificationStatus.PENDING);
+    expect(result.category).toBeNull();
+    expect(result.priority).toBeNull();
+    expect(result.technicalSummary).toBeNull();
     expect(result.newCategorySuggestion).toBeNull();
     expect(result.createdAt).toEqual(new Date('2026-01-15T10:00:00Z'));
     expect(repo.items).toHaveLength(1);
-    expect(classifyReport.execute).toHaveBeenCalledOnce();
+    expect(queueProducer.publishClassificationJob).toHaveBeenCalledWith({
+      reportId: 'test-id',
+    });
   });
 
   it('throws when location is invalid', async () => {
     const repo = new InMemoryReportRepository();
-    const classifyReport = createMockClassifyReport();
+    const queueProducer = createMockQueueProducer();
     const clock = createFakeClock();
-    const useCase = new CreateReportUseCase(repo, createMockLogger(), classifyReport, clock);
+    const useCase = new CreateReportUseCase(repo, createMockLogger(), queueProducer, clock);
 
     await expect(
       useCase.execute({
@@ -89,28 +96,23 @@ describe('CreateReportUseCase', () => {
     ).rejects.toThrow();
   });
 
-  it('creates report even when AI classification fails (best-effort)', async () => {
-    const repo = new InMemoryReportRepository();
-    const failingClassify: ClassifyReportPort = {
-      execute: vi.fn().mockRejectedValue(new Error('AI service unavailable')),
+  it('does not publish job if persistence fails', async () => {
+    const failingRepo: ReportRepository = {
+      save: vi.fn().mockRejectedValue(new Error('DB connection lost')),
+      findById: vi.fn(),
     };
-    const logger = createMockLogger();
+    const queueProducer = createMockQueueProducer();
     const clock = createFakeClock();
-    const useCase = new CreateReportUseCase(repo, logger, failingClassify, clock);
+    const useCase = new CreateReportUseCase(failingRepo, createMockLogger(), queueProducer, clock);
 
-    const result = await useCase.execute({
-      title: 'Pothole on Main St',
-      description: 'Deep pothole near the bus stop',
-      location: 'Main St & 2nd Ave',
-    });
+    await expect(
+      useCase.execute({
+        title: 'Pothole on Main St',
+        description: 'Deep pothole near the bus stop',
+        location: 'Main St & 2nd Ave',
+      }),
+    ).rejects.toThrow('DB connection lost');
 
-    expect(result.id).toBeDefined();
-    expect(result.title).toBe('Pothole on Main St');
-    expect(result.category).toBeNull();
-    expect(result.priority).toBeNull();
-    expect(result.technicalSummary).toBeNull();
-    expect(result.newCategorySuggestion).toBeNull();
-    expect(repo.items).toHaveLength(1);
-    expect(logger.warn).toHaveBeenCalledOnce();
+    expect(queueProducer.publishClassificationJob).not.toHaveBeenCalled();
   });
 });

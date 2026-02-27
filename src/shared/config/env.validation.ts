@@ -22,6 +22,10 @@ export const envSchema = z.object({
   DB_PASSWORD: z.string().default('postgres'),
   DB_NAME: z.string().default('urban_triage'),
 
+  // ── Redis ───────────────────────────────────────────────────────────
+  REDIS_HOST: z.string().default('localhost'),
+  REDIS_PORT: z.coerce.number().int().positive().default(6379),
+
   // ── AI / Gemini ─────────────────────────────────────────────────────
   GEMINI_API_KEY: z
     .string({ error: 'GEMINI_API_KEY is required — set it in your .env file' })

@@ -12,6 +12,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: urban_triage_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   app:
     build: .
     container_name: urban_triage_app
@@ -20,10 +29,13 @@ services:
       - .env
     environment:
       DB_HOST: postgres
+      REDIS_HOST: redis
     depends_on:
       - postgres
+      - redis
     ports:
       - "3000:3000"
 
 volumes:
   postgres_data:
+  redis_data:
