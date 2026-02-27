@@ -1,10 +1,14 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, Logger } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, Inject } from '@nestjs/common';
 import { Response } from 'express';
-import { DomainException } from '../../domain/reports/exceptions/domain.exception';
+import { DomainException } from '../../domain/shared/exceptions/domain.exception';
+import { AppLoggerPort } from '../../application/ports/logger.port';
+import { APP_LOGGER_TOKEN } from '../constants/tokens';
 
 @Catch(DomainException)
 export class DomainExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(DomainExceptionFilter.name);
+  constructor(
+    @Inject(APP_LOGGER_TOKEN) private readonly logger: AppLoggerPort,
+  ) {}
 
   catch(exception: DomainException, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();

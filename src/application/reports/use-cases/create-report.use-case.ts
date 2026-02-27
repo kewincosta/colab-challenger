@@ -2,7 +2,9 @@ import { Report } from '../../../domain/reports/entities/report.entity';
 import { Location, LocationRaw } from '../../../domain/reports/value-objects/location.value-object';
 import { ReportRepository } from '../../../domain/reports/repositories/report.repository';
 import { AppLoggerPort } from '../../ports/logger.port';
-import { ClassifyReportUseCase } from '../../ai/use-cases/classify-report.use-case';
+import { ClassifyReportPort } from '../../ports/classify-report.port';
+import { ClockPort } from '../../ports/clock.port';
+import { toAiClassification } from '../../ai/mappers/classification.mapper';
 
 export interface CreateReportCommand {
   title: string;
@@ -26,7 +28,8 @@ export class CreateReportUseCase {
   constructor(
     private readonly reportRepository: ReportRepository,
     private readonly logger: AppLoggerPort,
-    private readonly classifyReport: ClassifyReportUseCase,
+    private readonly classifyReport: ClassifyReportPort,
+    private readonly clock: ClockPort,
   ) {}
 
   async execute(command: CreateReportCommand): Promise<CreateReportResult> {
@@ -38,6 +41,7 @@ export class CreateReportUseCase {
       title: command.title,
       description: command.description,
       location,
+      createdAt: this.clock.now(),
     });
 
     // AI classification — best-effort, failures should not block report creation
@@ -48,12 +52,7 @@ export class CreateReportUseCase {
         location: command.location,
       });
 
-      report.enrichWithAiClassification({
-        category: classification.category,
-        priority: classification.priority,
-        technicalSummary: classification.technical_summary,
-        newCategorySuggestion: classification.new_category_suggestion,
-      });
+      report.enrichWithAiClassification(toAiClassification(classification));
 
       this.logger.log(
         `AI classification: category=${classification.category}, priority=${classification.priority}`,

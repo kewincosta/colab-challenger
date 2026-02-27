@@ -1,6 +1,5 @@
-export abstract class DomainException extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = this.constructor.name;
-  }
-}
+/**
+ * Re-export from canonical location.
+ * New code should import from 'src/domain/shared/exceptions/domain.exception'.
+ */
+export { DomainException } from '../../shared/exceptions/domain.exception';

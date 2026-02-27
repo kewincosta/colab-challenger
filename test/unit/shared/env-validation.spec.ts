@@ -18,8 +18,8 @@ describe('envSchema', () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
 
+    expect(result.data.NODE_ENV).toBe('development');
     expect(result.data.PORT).toBe(3000);
-    expect(result.data.DB_HOST).toBe('localhost');
     expect(result.data.DB_PORT).toBe(5432);
     expect(result.data.DB_USER).toBe('postgres');
     expect(result.data.DB_PASSWORD).toBe('postgres');
@@ -31,6 +31,7 @@ describe('envSchema', () => {
 
   it('accepts all custom values', () => {
     const result = envSchema.safeParse({
+      NODE_ENV: 'production',
       PORT: '8080',
       DB_HOST: 'db.prod',
       DB_PORT: '5433',

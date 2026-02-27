@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 export const envSchema = z.object({
   // ── Server ──────────────────────────────────────────────────────────
+  NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
 
   // ── Database (PostgreSQL) ───────────────────────────────────────────

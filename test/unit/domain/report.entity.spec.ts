@@ -97,4 +97,33 @@ describe('Report Entity', () => {
     expect(report.getAiClassification()?.category).toBe('Sanitation');
     expect(report.getAiClassification()?.technicalSummary).toBe('Second classification.');
   });
+
+  it('updates description via updateDescription()', () => {
+    const report = Report.create(validProps());
+    expect(report.getDescription()).toBe('The light on Rua das Flores has been out for 3 days.');
+
+    report.updateDescription('Updated description after inspection.');
+    expect(report.getDescription()).toBe('Updated description after inspection.');
+  });
+
+  it('updateDescription rejects empty string', () => {
+    const report = Report.create(validProps());
+    expect(() => report.updateDescription('')).toThrow();
+  });
+
+  it('moves to a new location via moveTo()', () => {
+    const report = Report.create(validProps());
+    const newLocation = Location.create('Rua Nova, 456');
+
+    report.moveTo(newLocation);
+    expect(report.getLocation().getValue()).toBe('Rua Nova, 456');
+  });
+
+  it('moveTo replaces the previous location', () => {
+    const report = Report.create(validProps());
+    expect(report.getLocation().getValue()).toBe('Rua das Flores, 123');
+
+    report.moveTo(Location.create({ lat: -23.55, lng: -46.63 }));
+    expect(report.getLocationRaw()).toEqual({ lat: -23.55, lng: -46.63 });
+  });
 });

@@ -34,14 +34,15 @@ export class ReportTypeOrmRepository implements ReportRepository {
         description: saved.description,
         location: restoredLocation,
         createdAt: saved.createdAt,
-        aiClassification: saved.category
-          ? {
-              category: saved.category,
-              priority: saved.priority!,
-              technicalSummary: saved.technicalSummary!,
-              newCategorySuggestion: saved.newCategorySuggestion,
-            }
-          : null,
+        aiClassification:
+          saved.category && saved.priority && saved.technicalSummary
+            ? {
+                category: saved.category,
+                priority: saved.priority,
+                technicalSummary: saved.technicalSummary,
+                newCategorySuggestion: saved.newCategorySuggestion ?? null,
+              }
+            : null,
       },
       saved.id,
     );

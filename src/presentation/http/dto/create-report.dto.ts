@@ -2,7 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, Validate } from 'class-validator';
 import { Type } from 'class-transformer';
 import { LocationFormatConstraint } from '../validators/location-format.validator';
-import { LocationRaw } from '../../../domain/reports/value-objects/location.value-object';
+
+/** Transport-level type — mirrors domain LocationRaw without coupling to it. */
+export type LocationInput = string | Record<string, unknown>;
 
 export class CreateReportDto {
   @ApiProperty({
@@ -34,5 +36,5 @@ export class CreateReportDto {
   })
   @Type(() => Object)
   @Validate(LocationFormatConstraint)
-  location!: LocationRaw;
+  location!: LocationInput;
 }

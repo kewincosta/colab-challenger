@@ -1,19 +1,18 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { DomainExceptionFilter } from '../../src/shared/filters/domain-exception.filter';
 import { AI_ENRICHMENT_SERVICE_TOKEN } from '../../src/shared/constants/tokens';
 
-const mockClassifyReport = {
-  execute: async () => ({
-    category: 'Waste',
-    new_category_suggestion: null,
-    priority: 'Medium',
-    technical_summary: 'Overflowing waste container requiring scheduled collection.',
-  }),
+const defaultClassification = {
+  category: 'Waste',
+  new_category_suggestion: null,
+  priority: 'Medium',
+  technical_summary: 'Overflowing waste container requiring scheduled collection.',
 };
+
+const mockClassifyExecute = vi.fn();
 
 describe('Reports API (e2e)', () => {
   let app: INestApplication;
@@ -23,14 +22,12 @@ describe('Reports API (e2e)', () => {
       imports: [AppModule],
     })
       .overrideProvider(AI_ENRICHMENT_SERVICE_TOKEN)
-      .useValue(mockClassifyReport)
+      .useValue({ execute: mockClassifyExecute })
       .compile();
 
     app = moduleRef.createNestApplication();
 
     app.setGlobalPrefix('api');
-
-    app.useGlobalFilters(new DomainExceptionFilter());
 
     app.useGlobalPipes(
       new ValidationPipe({
@@ -42,6 +39,11 @@ describe('Reports API (e2e)', () => {
     );
 
     await app.init();
+  });
+
+  beforeEach(() => {
+    mockClassifyExecute.mockReset();
+    mockClassifyExecute.mockResolvedValue(defaultClassification);
   });
 
   afterAll(async () => {
@@ -86,30 +88,22 @@ describe('Reports API (e2e)', () => {
   });
 
   it('/reports (POST) creates report even when AI fails', async () => {
-    // Override the mock to simulate failure for this specific test
-    const originalExecute = mockClassifyReport.execute;
-    mockClassifyReport.execute = async () => {
-      throw new Error('AI service unavailable');
-    };
+    mockClassifyExecute.mockRejectedValue(new Error('AI service unavailable'));
 
-    try {
-      const response = await request(app.getHttpServer())
-        .post('/api/reports')
-        .send({
-          title: 'Broken traffic light',
-          description: 'Traffic light stuck on red at Main St intersection',
-          location: 'Main St & Oak Ave',
-        })
-        .expect(201);
+    const response = await request(app.getHttpServer())
+      .post('/api/reports')
+      .send({
+        title: 'Broken traffic light',
+        description: 'Traffic light stuck on red at Main St intersection',
+        location: 'Main St & Oak Ave',
+      })
+      .expect(201);
 
-      expect(response.body.id).toBeDefined();
-      expect(response.body.title).toBe('Broken traffic light');
-      expect(response.body.category).toBeNull();
-      expect(response.body.priority).toBeNull();
-      expect(response.body.technicalSummary).toBeNull();
-      expect(response.body.newCategorySuggestion).toBeNull();
-    } finally {
-      mockClassifyReport.execute = originalExecute;
-    }
+    expect(response.body.id).toBeDefined();
+    expect(response.body.title).toBe('Broken traffic light');
+    expect(response.body.category).toBeNull();
+    expect(response.body.priority).toBeNull();
+    expect(response.body.technicalSummary).toBeNull();
+    expect(response.body.newCategorySuggestion).toBeNull();
   });
 });

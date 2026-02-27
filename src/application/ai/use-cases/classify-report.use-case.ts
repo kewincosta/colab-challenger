@@ -15,6 +15,7 @@
 import type { AiClientPort } from '../../ports/ai-client.port';
 import type { AiCache } from '../../ports/ai-cache.port';
 import type { AppLoggerPort } from '../../ports/logger.port';
+import type { ClassifyReportPort } from '../../ports/classify-report.port';
 import { AiClassificationSchemaRefined } from '../validators';
 import { buildCacheKey } from '../normalization';
 import {
@@ -26,7 +27,7 @@ import {
 import { PROMPT_VERSION } from '../types';
 import type { AiClassificationResult, AiEnrichmentInput } from '../types';
 
-export class ClassifyReportUseCase {
+export class ClassifyReportUseCase implements ClassifyReportPort {
   constructor(
     private readonly aiClient: AiClientPort,
     private readonly cache: AiCache<AiClassificationResult>,

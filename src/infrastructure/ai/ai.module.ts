@@ -15,11 +15,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GeminiClient } from './gemini.client';
 import { MemoryLruCache } from './cache/memory-lru.cache';
 import { ClassifyReportUseCase } from '../../application/ai/use-cases/classify-report.use-case';
-import { AppLogger } from '../../shared/logger/app-logger.service';
 import type { AppLoggerPort } from '../../application/ports/logger.port';
 import type { AiClientPort } from '../../application/ports/ai-client.port';
 import type { AiCache } from '../../application/ports/ai-cache.port';
 import type { AiClassificationResult } from '../../application/ai/types';
+import type { EnvConfig } from '../../shared/config/env.validation';
 import {
   APP_LOGGER_TOKEN,
   AI_CLIENT_TOKEN,
@@ -34,12 +34,8 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
   imports: [ConfigModule],
   providers: [
     {
-      provide: APP_LOGGER_TOKEN,
-      useClass: AppLogger,
-    },
-    {
       provide: AI_CLIENT_TOKEN,
-      useFactory: (config: ConfigService, logger: AppLoggerPort): AiClientPort =>
+      useFactory: (config: ConfigService<EnvConfig, true>, logger: AppLoggerPort): AiClientPort =>
         new GeminiClient(config, logger),
       inject: [ConfigService, APP_LOGGER_TOKEN],
     },

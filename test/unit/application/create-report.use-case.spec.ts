@@ -3,7 +3,8 @@ import { CreateReportUseCase } from '../../../src/application/reports/use-cases/
 import { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
 import { AppLoggerPort } from '../../../src/application/ports/logger.port';
-import { ClassifyReportUseCase } from '../../../src/application/ai/use-cases/classify-report.use-case';
+import { ClassifyReportPort } from '../../../src/application/ports/classify-report.port';
+import { ClockPort } from '../../../src/application/ports/clock.port';
 
 class InMemoryReportRepository implements ReportRepository {
   public items: Report[] = [];
@@ -32,7 +33,11 @@ function createMockLogger(): AppLoggerPort {
   };
 }
 
-function createMockClassifyReport(): ClassifyReportUseCase {
+function createFakeClock(fixed?: Date): ClockPort {
+  return { now: () => fixed ?? new Date('2026-01-15T10:00:00Z') };
+}
+
+function createMockClassifyReport(): ClassifyReportPort {
   return {
     execute: vi.fn().mockResolvedValue({
       category: 'Lighting',
@@ -40,14 +45,15 @@ function createMockClassifyReport(): ClassifyReportUseCase {
       priority: 'High',
       technical_summary: 'Streetlight malfunction requiring immediate repair.',
     }),
-  } as unknown as ClassifyReportUseCase;
+  };
 }
 
 describe('CreateReportUseCase', () => {
   it('creates and persists a report with AI classification', async () => {
     const repo = new InMemoryReportRepository();
     const classifyReport = createMockClassifyReport();
-    const useCase = new CreateReportUseCase(repo, createMockLogger(), classifyReport);
+    const clock = createFakeClock();
+    const useCase = new CreateReportUseCase(repo, createMockLogger(), classifyReport, clock);
 
     const result = await useCase.execute({
       title: 'Broken street light',
@@ -63,6 +69,7 @@ describe('CreateReportUseCase', () => {
     expect(result.priority).toBe('High');
     expect(result.technicalSummary).toBe('Streetlight malfunction requiring immediate repair.');
     expect(result.newCategorySuggestion).toBeNull();
+    expect(result.createdAt).toEqual(new Date('2026-01-15T10:00:00Z'));
     expect(repo.items).toHaveLength(1);
     expect(classifyReport.execute).toHaveBeenCalledOnce();
   });
@@ -70,7 +77,8 @@ describe('CreateReportUseCase', () => {
   it('throws when location is invalid', async () => {
     const repo = new InMemoryReportRepository();
     const classifyReport = createMockClassifyReport();
-    const useCase = new CreateReportUseCase(repo, createMockLogger(), classifyReport);
+    const clock = createFakeClock();
+    const useCase = new CreateReportUseCase(repo, createMockLogger(), classifyReport, clock);
 
     await expect(
       useCase.execute({
@@ -83,11 +91,12 @@ describe('CreateReportUseCase', () => {
 
   it('creates report even when AI classification fails (best-effort)', async () => {
     const repo = new InMemoryReportRepository();
-    const failingClassify = {
+    const failingClassify: ClassifyReportPort = {
       execute: vi.fn().mockRejectedValue(new Error('AI service unavailable')),
-    } as unknown as ClassifyReportUseCase;
+    };
     const logger = createMockLogger();
-    const useCase = new CreateReportUseCase(repo, logger, failingClassify);
+    const clock = createFakeClock();
+    const useCase = new CreateReportUseCase(repo, logger, failingClassify, clock);
 
     const result = await useCase.execute({
       title: 'Pothole on Main St',

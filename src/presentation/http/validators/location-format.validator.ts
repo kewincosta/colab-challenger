@@ -3,19 +3,17 @@ import {
   ValidatorConstraintInterface,
   ValidationArguments,
 } from 'class-validator';
+import { Location, LocationRaw } from '../../../domain/reports/value-objects/location.value-object';
 
 @ValidatorConstraint({ name: 'LocationFormat', async: false })
 export class LocationFormatConstraint implements ValidatorConstraintInterface {
   validate(value: unknown): boolean {
-    if (typeof value === 'string') {
-      return value.trim().length > 0;
+    try {
+      Location.create(value as LocationRaw);
+      return true;
+    } catch {
+      return false;
     }
-
-    if (typeof value === 'object' && value !== null) {
-      return Object.keys(value as Record<string, unknown>).length > 0;
-    }
-
-    return false;
   }
 
   defaultMessage(args: ValidationArguments): string {

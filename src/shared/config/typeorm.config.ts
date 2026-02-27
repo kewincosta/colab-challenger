@@ -18,6 +18,6 @@ export function buildTypeOrmConfig(
     password: config.get('DB_PASSWORD', { infer: true }),
     database: config.get('DB_NAME', { infer: true }),
     entities: [ReportOrmEntity],
-    synchronize: true,
+    synchronize: config.get('NODE_ENV', { infer: true }) !== 'production',
   };
 }

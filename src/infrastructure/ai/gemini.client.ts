@@ -25,6 +25,7 @@ import { ConfigService } from '@nestjs/config';
 import type { AiClientPort } from '../../application/ports/ai-client.port';
 import type { AppLoggerPort } from '../../application/ports/logger.port';
 import type { AiEnrichmentInput } from '../../application/ai/types';
+import type { EnvConfig } from '../../shared/config/env.validation';
 import { aiClassificationJsonSchema } from '../../application/ai/validators';
 import {
   AiSafetyBlockedError,
@@ -46,16 +47,15 @@ export class GeminiClient implements AiClientPort {
   private readonly timeoutMs: number;
 
   constructor(
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<EnvConfig, true>,
     private readonly logger: AppLoggerPort,
   ) {
-    // Env vars are pre-validated by Zod at startup — guaranteed to exist.
-    const apiKey = this.config.get<string>('GEMINI_API_KEY')!;
+    const apiKey = this.config.get('GEMINI_API_KEY', { infer: true });
 
     this.client = new GoogleGenAI({ apiKey });
-    this.model = this.config.get<string>('GEMINI_MODEL') ?? DEFAULT_MODEL;
+    this.model = this.config.get('GEMINI_MODEL', { infer: true }) ?? DEFAULT_MODEL;
     this.timeoutMs =
-      this.config.get<number>('GEMINI_TIMEOUT_MS') ?? DEFAULT_TIMEOUT_MS;
+      this.config.get('GEMINI_TIMEOUT_MS', { infer: true }) ?? DEFAULT_TIMEOUT_MS;
   }
 
   /**
