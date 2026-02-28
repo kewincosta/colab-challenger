@@ -46,26 +46,25 @@ Você opera com neutralidade administrativa, precisão técnica e consciência d
 MISSÃO
 ========================================
 
-1) Identificar a SUBCATEGORIA mais específica que descreve o problema.
+1) Identificar a SUBCATEGORIA mais específica que descreve o problema (uso interno para raciocínio).
 2) Atribuir a CATEGORIA-PAI correspondente à subcategoria escolhida.
 3) Atribuir prioridade estritamente com base nos indicadores de severidade.
 4) Produzir um resumo técnico formal e impessoal em português brasileiro (pt-BR).
-5) Sugerir uma nova categoria apenas se NENHUMA subcategoria existente se aplicar.
 
 RACIOCÍNIO: Sempre classifique de baixo para cima (subcategoria → categoria).
 A subcategoria é o item mais específico; a categoria é derivada automaticamente da taxonomia.
+A subcategoria é usada APENAS para raciocínio interno — NÃO a inclua na saída JSON.
 
 ========================================
 CONTRATO DE SAÍDA (INEGOCIÁVEL)
 ========================================
 
 Retorne APENAS JSON ESTRITO com os campos:
-- category: uma das categorias da taxonomia abaixo
-- subcategory: uma das subcategorias da categoria escolhida (null SOMENTE quando category="Outros")
-- new_category_suggestion: null (ou obrigatório quando category="Outros")
+- category: uma das categorias da taxonomia abaixo (incluindo "Outros" quando nenhuma subcategoria se aplicar)
 - priority: Baixa | Média | Alta
 - technical_summary: resumo técnico em pt-BR, máximo 600 caracteres
 
+NÃO inclua subcategory, new_category_suggestion ou qualquer outro campo.
 Sem prosa. Sem markdown. Sem chaves adicionais.
 O schema JSON é aplicado pelo sistema — apenas preencha os valores corretamente.
 
@@ -74,8 +73,7 @@ IDIOMA
 ========================================
 
 Todos os valores devem ser em português brasileiro (pt-BR).
-Categorias, subcategorias e prioridades devem ser escritos EXATAMENTE como listados na taxonomia.
-new_category_suggestion DEVE ser em português, Title Case.
+Categorias e prioridades devem ser escritos EXATAMENTE como listados na taxonomia.
 
 ========================================
 TAXONOMIA DE CATEGORIAS E SUBCATEGORIAS
@@ -96,12 +94,8 @@ PASSO 2 — Derive a categoria-pai:
 - NUNCA atribua uma subcategoria a uma categoria diferente da taxonomia.
 
 PASSO 3 — Caso nenhuma subcategoria se aplique:
-- category="Outros", subcategory=null
-- new_category_suggestion OBRIGATÓRIO (Title Case, máximo 40 caracteres, sem pontuação/emojis)
-- Exemplos VÁLIDOS: "Educação Municipal", "Assistência Social"
-- Exemplos INVÁLIDOS: "coisas da cidade!!", "EDUCAÇÃO 📚"
-
-Se uma subcategoria existente se aplicar → new_category_suggestion DEVE ser null.
+- category="Outros"
+- Use esta categoria apenas quando NENHUMA subcategoria existente se aplicar ao relato.
 
 ========================================
 RESOLUÇÃO DE CONFLITO
@@ -246,19 +240,6 @@ function validPrioritiesList(): string {
 }
 
 /**
- * Gera lista resumida de subcategorias por categoria para o prompt de reparo.
- */
-function subcategorySummary(): string {
-  const lines: string[] = [];
-  for (const cat of REPORT_CATEGORIES) {
-    if (cat === 'Outros') continue;
-    const subs = CATEGORY_SUBCATEGORIES[cat];
-    lines.push(`  ${cat}: ${subs.join(', ')}`);
-  }
-  return lines.join('\n');
-}
-
-/**
  * Constrói o prompt de reparo usado quando a primeira tentativa retorna saída inválida.
  */
 export function buildRepairMessage(rawResponse: string, error: string): string {
@@ -272,10 +253,8 @@ ${rawResponse}
 LEMBRETE:
 - Categorias válidas: ${validCategoriesList()}
 - Prioridades válidas: ${validPrioritiesList()}
-- subcategory deve pertencer à categoria escolhida (null SOMENTE quando category="Outros")
-- Subcategorias por categoria:
-${subcategorySummary()}
-- new_category_suggestion é OBRIGATÓRIO quando category é "Outros", DEVE ser null caso contrário
+- A saída deve conter APENAS: category, priority, technical_summary
+- NÃO inclua subcategory, new_category_suggestion ou campos extras
 - technical_summary deve ser em português brasileiro (pt-BR), máximo 600 caracteres
 
 Corrija a saída. Retorne APENAS JSON ESTRITO. Sem prosa. Sem markdown.`;

@@ -31,10 +31,8 @@ export class ReportsController {
       location: result.location,
       classificationStatus: result.classificationStatus,
       category: result.category,
-      subcategory: result.subcategory,
       priority: result.priority,
       technicalSummary: result.technicalSummary,
-      newCategorySuggestion: result.newCategorySuggestion,
     };
   }
 }

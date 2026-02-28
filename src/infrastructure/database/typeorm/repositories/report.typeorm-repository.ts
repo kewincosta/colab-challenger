@@ -43,10 +43,8 @@ export class ReportTypeOrmRepository implements ReportRepository {
   ): Pick<
     ReportOrmEntity,
     | 'category'
-    | 'subcategory'
     | 'priority'
     | 'technicalSummary'
-    | 'newCategorySuggestion'
     | 'classificationStatus'
     | 'classificationAttempts'
     | 'lastClassificationError'
@@ -56,10 +54,8 @@ export class ReportTypeOrmRepository implements ReportRepository {
     const hasAi = ai !== null;
     return {
       category: hasAi ? ai.category : null,
-      subcategory: hasAi ? ai.subcategory : null,
       priority: hasAi ? ai.priority : null,
       technicalSummary: hasAi ? ai.technicalSummary : null,
-      newCategorySuggestion: hasAi ? ai.newCategorySuggestion : null,
       classificationStatus: report.getClassificationStatus(),
       classificationAttempts: report.getClassificationAttempts(),
       lastClassificationError: report.getLastClassificationError(),
@@ -80,10 +76,8 @@ export class ReportTypeOrmRepository implements ReportRepository {
           entity.category && entity.priority && entity.technicalSummary
             ? {
                 category: entity.category,
-                subcategory: entity.subcategory,
                 priority: entity.priority,
                 technicalSummary: entity.technicalSummary,
-                newCategorySuggestion: entity.newCategorySuggestion ?? null,
               }
             : null,
         classificationStatus:

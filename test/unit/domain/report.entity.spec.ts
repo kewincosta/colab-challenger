@@ -31,10 +31,8 @@ describe('Report Entity', () => {
         createdAt: new Date('2025-01-15T10:00:00Z'),
         aiClassification: {
           category: 'Iluminação Pública',
-          subcategory: 'Poste apagado',
           priority: 'Alta',
           technicalSummary: 'Poste sem funcionamento.',
-          newCategorySuggestion: null,
         },
         classificationStatus: ClassificationStatus.DONE,
         classifiedAt: new Date('2025-01-15T10:01:00Z'),
@@ -46,10 +44,8 @@ describe('Report Entity', () => {
     expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
     expect(report.getAiClassification()).toEqual({
       category: 'Iluminação Pública',
-      subcategory: 'Poste apagado',
       priority: 'Alta',
       technicalSummary: 'Poste sem funcionamento.',
-      newCategorySuggestion: null,
     });
   });
 
@@ -70,10 +66,8 @@ describe('Report Entity', () => {
         classificationStatus: ClassificationStatus.DONE,
         aiClassification: {
           category: 'Iluminação Pública',
-          subcategory: 'Poste apagado',
           priority: 'Alta',
           technicalSummary: 'Concluído.',
-          newCategorySuggestion: null,
         },
       },
       'abc-123',
@@ -100,10 +94,8 @@ describe('Report Entity', () => {
     report.completeClassification(
       {
         category: 'Infraestrutura Urbana',
-        subcategory: 'Buracos na via',
         priority: 'Média',
         technicalSummary: 'Degradação de superfície detectada.',
-        newCategorySuggestion: null,
       },
       completedAt,
     );
@@ -112,10 +104,8 @@ describe('Report Entity', () => {
     expect(report.getClassifiedAt()).toEqual(completedAt);
     expect(report.getAiClassification()).toEqual({
       category: 'Infraestrutura Urbana',
-      subcategory: 'Buracos na via',
       priority: 'Média',
       technicalSummary: 'Degradação de superfície detectada.',
-      newCategorySuggestion: null,
     });
   });
 

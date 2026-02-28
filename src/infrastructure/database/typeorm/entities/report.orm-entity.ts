@@ -17,17 +17,11 @@ export class ReportOrmEntity {
   @Column({ type: 'varchar', length: 50, nullable: true })
   category!: string | null;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  subcategory!: string | null;
-
   @Column({ type: 'varchar', length: 50, nullable: true })
   priority!: string | null;
 
   @Column({ name: 'technical_summary', type: 'text', nullable: true })
   technicalSummary!: string | null;
-
-  @Column({ name: 'new_category_suggestion', type: 'varchar', length: 255, nullable: true })
-  newCategorySuggestion!: string | null;
 
   @Column({ name: 'classification_status', type: 'varchar', length: 20, default: 'PENDING' })
   classificationStatus!: string;

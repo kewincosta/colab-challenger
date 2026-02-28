@@ -16,7 +16,7 @@ import type { AiClientPort } from '../../ports/ai-client.port';
 import type { AiCache } from '../../ports/ai-cache.port';
 import type { AppLoggerPort } from '../../ports/logger.port';
 import type { ClassifyReportPort } from '../../ports/classify-report.port';
-import { AiClassificationSchemaRefined, aiClassificationJsonSchema } from '../validators';
+import { AiClassificationSchema, aiClassificationJsonSchema } from '../validators';
 import { buildCacheKey } from '../normalization';
 import {
   AiInvalidJsonError,
@@ -43,7 +43,7 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
    * 2. Build prompts (system instruction + user message).
    * 3. Call AI client with prompts and JSON schema.
    * 4. Parse JSON strictly.
-   * 5. Validate with Zod (refined schema).
+   * 5. Validate with Zod.
    * 6. On parse/validation failure, build repair prompt and retry.
    * 7. Cache and return result.
    */
@@ -134,8 +134,8 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
       return { success: false, error: `JSON parse error: ${message}` };
     }
 
-    // Zod validation (with refinement)
-    const result = AiClassificationSchemaRefined.safeParse(parsed);
+    // Zod validation
+    const result = AiClassificationSchema.safeParse(parsed);
     if (!result.success) {
       const zodErrors = new Map<string, string[]>();
       for (const issue of result.error.issues) {

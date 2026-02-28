@@ -10,7 +10,7 @@
  */
 
 /** Increment this version whenever the AI classification prompt changes materially. */
-export const PROMPT_VERSION = 'v3.0.0';
+export const PROMPT_VERSION = 'v4.0.0';
 
 // ── Taxonomia hierárquica ─────────────────────────────────────────────
 
@@ -131,8 +131,6 @@ export type PriorityLevel = (typeof PRIORITY_LEVELS)[number];
 
 export interface AiClassificationResult {
   readonly category: ReportCategory;
-  readonly subcategory: string | null;
-  readonly new_category_suggestion: string | null;
   readonly priority: PriorityLevel;
   readonly technical_summary: string;
 }

@@ -1,7 +1,13 @@
 import { defineConfig } from 'vitest/config';
+import swc from 'unplugin-swc';
 import path from 'path';
 
 export default defineConfig({
+  plugins: [
+    swc.vite({
+      module: { type: 'es6' },
+    }),
+  ],
   test: {
     globals: true,
     environment: 'node',

@@ -2,20 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { DomainExceptionFilter } from '../../../src/shared/filters/domain-exception.filter';
 import { DomainException } from '../../../src/domain/shared/exceptions/domain.exception';
 import { HttpStatus } from '@nestjs/common';
-import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
+import { createMockLogger } from '../../helpers';
 
 class TestDomainException extends DomainException {
   constructor() {
     super('Test domain error');
   }
-}
-
-function createMockLogger(): AppLoggerPort {
-  return {
-    log: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  };
 }
 
 function createMockHost(response: {

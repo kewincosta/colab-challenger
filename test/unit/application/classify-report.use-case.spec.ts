@@ -1,67 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClassifyReportUseCase } from '../../../src/application/ai/use-cases/classify-report.use-case';
 import type { AiClientPort } from '../../../src/application/ports/ai-client.port';
-import type { AiCache } from '../../../src/application/ports/ai-cache.port';
 import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
-import type { AiClassificationResult, AiEnrichmentInput } from '../../../src/application/ai/types';
 import {
   AiTimeoutError,
   AiSafetyBlockedError,
   AiInvalidJsonError,
   AiValidationError,
 } from '../../../src/application/ai/errors';
+import {
+  createMockLogger,
+  createMockAiClient,
+  createMockCache,
+  VALID_ENRICHMENT_INPUT,
+  VALID_CLASSIFICATION_RESULT,
+} from '../../helpers';
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const VALID_INPUT: AiEnrichmentInput = {
-  title: 'Broken streetlight',
-  description: 'The light on Rua das Flores has been out for 3 days.',
-  location: '01310-100',
-};
-
-const VALID_RESULT: AiClassificationResult = {
-  category: 'Iluminação Pública',
-  subcategory: 'Poste apagado',
-  new_category_suggestion: null,
-  priority: 'Média',
-  technical_summary: 'Poste sem funcionamento reportado na Rua das Flores.',
-};
-
+const VALID_INPUT = VALID_ENRICHMENT_INPUT;
+const VALID_RESULT = VALID_CLASSIFICATION_RESULT;
 const VALID_JSON = JSON.stringify(VALID_RESULT);
-
-// ---------------------------------------------------------------------------
-// Factories
-// ---------------------------------------------------------------------------
-
-function createMockLogger(): AppLoggerPort {
-  return {
-    log: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  };
-}
-
-function createMockAiClient(overrides: Partial<AiClientPort> = {}): AiClientPort {
-  return {
-    generate: vi.fn<AiClientPort['generate']>().mockResolvedValue(VALID_JSON),
-    ...overrides,
-  };
-}
-
-function createMockCache(
-  overrides: Partial<AiCache<AiClassificationResult>> = {},
-): AiCache<AiClassificationResult> {
-  return {
-    get: vi.fn<AiCache<AiClassificationResult>['get']>().mockReturnValue(undefined),
-    set: vi.fn(),
-    has: vi.fn().mockReturnValue(false),
-    clear: vi.fn(),
-    size: 0,
-    ...overrides,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -76,7 +37,7 @@ describe('ClassifyReportUseCase', () => {
 
   it('returns classification on valid first attempt', async () => {
     // Arrange
-    const aiClient = createMockAiClient();
+    const aiClient = createMockAiClient({}, VALID_JSON);
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
 
@@ -91,7 +52,7 @@ describe('ClassifyReportUseCase', () => {
 
   it('returns cached result without calling AI client', async () => {
     // Arrange
-    const aiClient = createMockAiClient();
+    const aiClient = createMockAiClient({}, VALID_JSON);
     const cache = createMockCache({
       get: vi.fn().mockReturnValue(VALID_RESULT),
     });
@@ -130,8 +91,6 @@ describe('ClassifyReportUseCase', () => {
     // Arrange — valid JSON but invalid schema (missing required field)
     const invalidPayload = JSON.stringify({
       category: 'Iluminação Pública',
-      subcategory: 'Poste apagado',
-      new_category_suggestion: null,
       priority: 'Média',
       // technical_summary missing
     });

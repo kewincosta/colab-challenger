@@ -23,10 +23,8 @@ export interface CreateReportResult {
   createdAt: Date;
   classificationStatus: ClassificationStatus;
   category: string | null;
-  subcategory: string | null;
   priority: string | null;
   technicalSummary: string | null;
-  newCategorySuggestion: string | null;
 }
 
 export class CreateReportUseCase {
@@ -68,10 +66,8 @@ export class CreateReportUseCase {
       createdAt: persisted.getCreatedAt(),
       classificationStatus: persisted.getClassificationStatus(),
       category: null,
-      subcategory: null,
       priority: null,
       technicalSummary: null,
-      newCategorySuggestion: null,
     };
   }
 }

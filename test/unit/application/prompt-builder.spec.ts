@@ -163,8 +163,8 @@ describe('buildRepairMessage', () => {
 
   it('includes subcategory information in repair prompt', () => {
     const result = buildRepairMessage('any', 'any error');
-    expect(result).toContain('subcategory');
-    expect(result).toContain('Subcategorias por categoria');
+    expect(result).toContain('NÃO inclua subcategory');
+    expect(result).toContain('category, priority, technical_summary');
   });
 
   it('reminds pt-BR language requirement', () => {

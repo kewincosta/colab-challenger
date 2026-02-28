@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeminiClient } from '../../../src/infrastructure/ai/gemini.client';
-import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
 import {
   AiTimeoutError,
   AiSafetyBlockedError,
   AiInvalidJsonError,
 } from '../../../src/application/ai/errors';
+import { createMockLogger } from '../../helpers';
 
 // ---------------------------------------------------------------------------
 // Mock @google/genai — must be before import of GeminiClient in test scope
@@ -44,14 +44,6 @@ function createMockConfig(overrides: Record<string, unknown> = {}) {
   return {
     get: vi.fn((key: string) => values[key]),
   } as any;
-}
-
-function createMockLogger(): AppLoggerPort {
-  return {
-    log: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  };
 }
 
 const SYSTEM_INSTRUCTION = 'You are a classifier.';

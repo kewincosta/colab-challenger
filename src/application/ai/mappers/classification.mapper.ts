@@ -11,8 +11,6 @@ import type { AiClassification } from '../../../domain/reports/entities/report.e
 export function toAiClassification(result: AiClassificationResult): AiClassification {
   return {
     category: result.category,
-    subcategory: result.subcategory,
-    newCategorySuggestion: result.new_category_suggestion,
     priority: result.priority,
     technicalSummary: result.technical_summary,
   };

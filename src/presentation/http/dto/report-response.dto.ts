@@ -53,13 +53,6 @@ export class ReportResponseDto {
   category!: string | null;
 
   @ApiPropertyOptional({
-    description: 'AI-assigned subcategory (specific issue type within the category)',
-    example: 'Buracos na via',
-    nullable: true,
-  })
-  subcategory!: string | null;
-
-  @ApiPropertyOptional({
     description: 'AI-assigned priority level',
     example: 'Alta',
     nullable: true,
@@ -73,11 +66,4 @@ export class ReportResponseDto {
     nullable: true,
   })
   technicalSummary!: string | null;
-
-  @ApiPropertyOptional({
-    description: 'AI-suggested new category when classified as "Outros"',
-    example: 'Educação Municipal',
-    nullable: true,
-  })
-  newCategorySuggestion!: string | null;
 }

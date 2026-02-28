@@ -7,14 +7,7 @@ import { ClassificationStatus } from '../../../src/domain/reports/value-objects/
 import type { ClassifyReportPort } from '../../../src/application/ports/classify-report.port';
 import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
 import type { ClockPort } from '../../../src/application/ports/clock.port';
-
-function createMockLogger(): AppLoggerPort {
-  return { log: vi.fn(), error: vi.fn(), warn: vi.fn() };
-}
-
-function createFakeClock(fixed?: Date): ClockPort {
-  return { now: () => fixed ?? new Date('2026-02-27T12:00:00Z') };
-}
+import { createMockLogger, createFakeClock } from '../../helpers';
 
 function createPendingReport(id = 'report-1'): Report {
   return Report.restore(
@@ -48,8 +41,6 @@ describe('ProcessClassificationUseCase', () => {
     classifyReport = {
       execute: vi.fn().mockResolvedValue({
         category: 'Iluminação Pública',
-        subcategory: 'Poste danificado',
-        new_category_suggestion: null,
         priority: 'Alta',
         technical_summary: 'Poste com defeito necessitando reparo imediato.',
       }),
@@ -70,12 +61,10 @@ describe('ProcessClassificationUseCase', () => {
     expect(lastSaved.getClassificationStatus()).toBe(ClassificationStatus.DONE);
     expect(lastSaved.getAiClassification()).toEqual({
       category: 'Iluminação Pública',
-      subcategory: 'Poste danificado',
-      newCategorySuggestion: null,
       priority: 'Alta',
       technicalSummary: 'Poste com defeito necessitando reparo imediato.',
     });
-    expect(lastSaved.getClassifiedAt()).toEqual(new Date('2026-02-27T12:00:00Z'));
+    expect(lastSaved.getClassifiedAt()).toEqual(new Date('2026-01-15T10:00:00Z'));
   });
 
   it('skips classification when report is not found', async () => {
@@ -97,10 +86,8 @@ describe('ProcessClassificationUseCase', () => {
         classificationStatus: ClassificationStatus.DONE,
         aiClassification: {
           category: 'Iluminação Pública',
-          subcategory: 'Poste apagado',
           priority: 'Alta',
           technicalSummary: 'Já classificado.',
-          newCategorySuggestion: null,
         },
       },
       'done-report',
