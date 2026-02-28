@@ -29,23 +29,17 @@ describe('AiClassificationSchema', () => {
   });
 
   it('rejects an invalid category', () => {
-    const result = AiClassificationSchema.safeParse(
-      validPayload({ category: 'Teleportation' }),
-    );
+    const result = AiClassificationSchema.safeParse(validPayload({ category: 'Teleportation' }));
     expect(result.success).toBe(false);
   });
 
   it('rejects an invalid priority', () => {
-    const result = AiClassificationSchema.safeParse(
-      validPayload({ priority: 'Urgent' }),
-    );
+    const result = AiClassificationSchema.safeParse(validPayload({ priority: 'Urgent' }));
     expect(result.success).toBe(false);
   });
 
   it('rejects empty technical_summary', () => {
-    const result = AiClassificationSchema.safeParse(
-      validPayload({ technical_summary: '' }),
-    );
+    const result = AiClassificationSchema.safeParse(validPayload({ technical_summary: '' }));
     expect(result.success).toBe(false);
   });
 

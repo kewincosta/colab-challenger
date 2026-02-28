@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import { ReportTypeOrmRepository } from '../../../src/infrastructure/database/typeorm/repositories/report.typeorm-repository';
 import { ReportOrmEntity } from '../../../src/infrastructure/database/typeorm/entities/report.orm-entity';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
@@ -28,7 +28,11 @@ describe('ReportTypeOrmRepository', () => {
   it('maps and saves a report without AI classification', async () => {
     const ormRepo = {
       save: vi.fn(async (entity: ReportOrmEntity) =>
-        buildSavedEntity({ title: entity.title, description: entity.description, location: entity.location }),
+        buildSavedEntity({
+          title: entity.title,
+          description: entity.description,
+          location: entity.location,
+        }),
       ),
     } as unknown as Repository<ReportOrmEntity>;
 
@@ -99,7 +103,8 @@ describe('ReportTypeOrmRepository', () => {
       newCategorySuggestion: null,
     });
 
-    const savedEntity = (ormRepo.save as ReturnType<typeof vi.fn>).mock.calls[0][0] as ReportOrmEntity;
+    const savedEntity = (ormRepo.save as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as ReportOrmEntity;
     expect(savedEntity.category).toBe('Lighting');
     expect(savedEntity.classificationStatus).toBe('DONE');
   });

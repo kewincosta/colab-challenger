@@ -145,9 +145,7 @@ Prefer conservative classification.`;
  */
 export function buildUserMessage(input: AiEnrichmentInput): string {
   const locationStr =
-    typeof input.location === 'string'
-      ? input.location
-      : JSON.stringify(input.location);
+    typeof input.location === 'string' ? input.location : JSON.stringify(input.location);
 
   return `Classify the following urban issue report.
 

@@ -5,23 +5,23 @@ import { AppLoggerPort } from '../../application/ports/logger.port';
 export class AppLogger implements NestLoggerService, AppLoggerPort {
   private readonly logger = new Logger('App');
 
-  log(message: string) {
+  log(message: string): void {
     this.logger.log(message);
   }
 
-  error(message: string, trace?: string) {
+  error(message: string, trace?: string): void {
     this.logger.error(message, trace);
   }
 
-  warn(message: string) {
+  warn(message: string): void {
     this.logger.warn(message);
   }
 
-  debug(message: string) {
+  debug(message: string): void {
     this.logger.debug(message);
   }
 
-  verbose(message: string) {
+  verbose(message: string): void {
     this.logger.verbose(message);
   }
 }

@@ -2,7 +2,7 @@
  * Input normalization utilities for deterministic cache key generation.
  */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 /**
  * Normalize a text string for cache keying:
@@ -11,7 +11,7 @@ import { createHash } from 'crypto';
  * - trim
  */
 export function normalizeText(text: string): string {
-  return text.toLowerCase().replace(/\s+/g, ' ').trim();
+  return text.toLowerCase().replace(/\s+/gv, ' ').trim();
 }
 
 /**
@@ -21,22 +21,15 @@ export function normalizeText(text: string): string {
  * - MAP (lat/lng object): round to 4 decimal places, sorted key order.
  * - Generic string: normalize text.
  */
-export function canonicalizeLocation(
-  location: string | Record<string, unknown>,
-): string {
+export function canonicalizeLocation(location: string | Record<string, unknown>): string {
   if (typeof location === 'string') {
-    const digitsOnly = location.replace(/\D/g, '');
-    const isCep = /^\d{5,8}$/.test(digitsOnly);
+    const digitsOnly = location.replace(/\D/gv, '');
+    const isCep = /^\d{5,8}$/v.test(digitsOnly);
     if (isCep) return `CEP:${digitsOnly}`;
     return `STR:${normalizeText(location)}`;
   }
 
-  if (
-    typeof location === 'object' &&
-    location !== null &&
-    'lat' in location &&
-    'lng' in location
-  ) {
+  if ('lat' in location && 'lng' in location) {
     const lat = Number(location.lat);
     const lng = Number(location.lng);
     if (!Number.isNaN(lat) && !Number.isNaN(lng)) {

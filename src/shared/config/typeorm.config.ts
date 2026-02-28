@@ -1,5 +1,5 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
+import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import type { ConfigService } from '@nestjs/config';
 import { ReportOrmEntity } from '../../infrastructure/database/typeorm/entities/report.orm-entity';
 import type { EnvConfig } from './env.validation';
 
@@ -7,9 +7,7 @@ import type { EnvConfig } from './env.validation';
  * Build TypeORM config from the validated environment.
  * Receives ConfigService so all defaults come from the Zod schema.
  */
-export function buildTypeOrmConfig(
-  config: ConfigService<EnvConfig, true>,
-): TypeOrmModuleOptions {
+export function buildTypeOrmConfig(config: ConfigService<EnvConfig, true>): TypeOrmModuleOptions {
   return {
     type: 'postgres',
     host: config.get('DB_HOST', { infer: true }),

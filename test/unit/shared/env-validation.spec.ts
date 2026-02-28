@@ -54,11 +54,13 @@ describe('envSchema', () => {
   });
 
   it('coerces string numbers for PORT, DB_PORT, GEMINI_TIMEOUT_MS', () => {
-    const result = envSchema.safeParse(validEnv({
-      PORT: '4000',
-      DB_PORT: '5433',
-      GEMINI_TIMEOUT_MS: '60000',
-    }));
+    const result = envSchema.safeParse(
+      validEnv({
+        PORT: '4000',
+        DB_PORT: '5433',
+        GEMINI_TIMEOUT_MS: '60000',
+      }),
+    );
 
     expect(result.success).toBe(true);
     if (!result.success) return;

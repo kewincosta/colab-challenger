@@ -10,5 +10,5 @@ export interface ClassificationJobPayload {
 }
 
 export interface QueueProducerPort {
-  publishClassificationJob(payload: ClassificationJobPayload): Promise<void>;
+  publishClassificationJob: (payload: ClassificationJobPayload) => Promise<void>;
 }

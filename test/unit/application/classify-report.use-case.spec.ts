@@ -3,10 +3,7 @@ import { ClassifyReportUseCase } from '../../../src/application/ai/use-cases/cla
 import type { AiClientPort } from '../../../src/application/ports/ai-client.port';
 import type { AiCache } from '../../../src/application/ports/ai-cache.port';
 import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
-import type {
-  AiClassificationResult,
-  AiEnrichmentInput,
-} from '../../../src/application/ai/types';
+import type { AiClassificationResult, AiEnrichmentInput } from '../../../src/application/ai/types';
 import {
   AiTimeoutError,
   AiSafetyBlockedError,
@@ -45,9 +42,7 @@ function createMockLogger(): AppLoggerPort {
   };
 }
 
-function createMockAiClient(
-  overrides: Partial<AiClientPort> = {},
-): AiClientPort {
+function createMockAiClient(overrides: Partial<AiClientPort> = {}): AiClientPort {
   return {
     classify: vi.fn<AiClientPort['classify']>().mockResolvedValue(VALID_JSON),
     repair: vi.fn<AiClientPort['repair']>().mockResolvedValue(VALID_JSON),
@@ -164,9 +159,7 @@ describe('ClassifyReportUseCase', () => {
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
 
     // Act & Assert
-    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiInvalidJsonError,
-    );
+    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiInvalidJsonError);
     expect(cache.set).not.toHaveBeenCalled();
   });
 
@@ -186,9 +179,7 @@ describe('ClassifyReportUseCase', () => {
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
 
     // Act & Assert
-    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiValidationError,
-    );
+    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiValidationError);
   });
 
   it('propagates AiTimeoutError from classify call', async () => {
@@ -200,26 +191,22 @@ describe('ClassifyReportUseCase', () => {
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
 
     // Act & Assert
-    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiTimeoutError,
-    );
+    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiTimeoutError);
     expect(logger.error).toHaveBeenCalled();
   });
 
   it('propagates AiSafetyBlockedError from classify call', async () => {
     // Arrange
     const aiClient = createMockAiClient({
-      classify: vi.fn<AiClientPort['classify']>().mockRejectedValue(
-        new AiSafetyBlockedError('HARM_CATEGORY_HARASSMENT'),
-      ),
+      classify: vi
+        .fn<AiClientPort['classify']>()
+        .mockRejectedValue(new AiSafetyBlockedError('HARM_CATEGORY_HARASSMENT')),
     });
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
 
     // Act & Assert
-    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiSafetyBlockedError,
-    );
+    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiSafetyBlockedError);
     expect(logger.error).toHaveBeenCalled();
   });
 
@@ -233,8 +220,6 @@ describe('ClassifyReportUseCase', () => {
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
 
     // Act & Assert
-    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiTimeoutError,
-    );
+    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiTimeoutError);
   });
 });

@@ -11,16 +11,9 @@
  * - https://ai.google.dev/gemini-api/docs/safety-settings
  */
 
-import {
-  GoogleGenAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/genai';
-import type {
-  GenerateContentResponse,
-  SafetySetting,
-} from '@google/genai';
-import { ConfigService } from '@nestjs/config';
+import { GoogleGenAI, HarmBlockThreshold, HarmCategory } from '@google/genai';
+import type { GenerateContentResponse, SafetySetting } from '@google/genai';
+import type { ConfigService } from '@nestjs/config';
 
 import type { AiClientPort } from '../../application/ports/ai-client.port';
 import type { AppLoggerPort } from '../../application/ports/logger.port';
@@ -32,14 +25,7 @@ import {
   AiTimeoutError,
   AiInvalidJsonError,
 } from '../../application/ai/errors';
-import {
-  buildSystemInstruction,
-  buildUserMessage,
-  buildRepairMessage,
-} from './prompt-builder';
-
-const DEFAULT_MODEL = 'gemini-3-flash-preview';
-const DEFAULT_TIMEOUT_MS = 30_000;
+import { buildSystemInstruction, buildUserMessage, buildRepairMessage } from './prompt-builder';
 
 export class GeminiClient implements AiClientPort {
   private readonly client: GoogleGenAI;
@@ -53,9 +39,8 @@ export class GeminiClient implements AiClientPort {
     const apiKey = this.config.get('GEMINI_API_KEY', { infer: true });
 
     this.client = new GoogleGenAI({ apiKey });
-    this.model = this.config.get('GEMINI_MODEL', { infer: true }) ?? DEFAULT_MODEL;
-    this.timeoutMs =
-      this.config.get('GEMINI_TIMEOUT_MS', { infer: true }) ?? DEFAULT_TIMEOUT_MS;
+    this.model = this.config.get('GEMINI_MODEL', { infer: true });
+    this.timeoutMs = this.config.get('GEMINI_TIMEOUT_MS', { infer: true });
   }
 
   /**
@@ -65,52 +50,44 @@ export class GeminiClient implements AiClientPort {
     const systemInstruction = buildSystemInstruction();
     const userMessage = buildUserMessage(input);
 
-    return this.callGemini(systemInstruction, userMessage);
+    return await this.callGemini(systemInstruction, userMessage);
   }
 
   /**
    * Retry with a repair prompt when the initial response was invalid.
    */
-  async repair(
-    input: AiEnrichmentInput,
-    previousRaw: string,
-    error: string,
-  ): Promise<string> {
+  async repair(input: AiEnrichmentInput, previousRaw: string, error: string): Promise<string> {
     const systemInstruction = buildSystemInstruction();
     const repairMessage = buildRepairMessage(previousRaw, error);
 
-    this.logger.warn(
-      `[GeminiClient] Attempting repair retry for input: "${input.title}"`,
-    );
+    this.logger.warn(`[GeminiClient] Attempting repair retry for input: "${input.title}"`);
 
-    return this.callGemini(systemInstruction, repairMessage);
+    return await this.callGemini(systemInstruction, repairMessage);
   }
 
-  private async callGemini(
-    systemInstruction: string,
-    userMessage: string,
-  ): Promise<string> {
+  private async callGemini(systemInstruction: string, userMessage: string): Promise<string> {
     const abortController = new AbortController();
-    const timeout = setTimeout(() => abortController.abort(), this.timeoutMs);
+    const timeout = setTimeout(() => {
+      abortController.abort();
+    }, this.timeoutMs);
 
     try {
-      const response: GenerateContentResponse =
-        await this.client.models.generateContent({
-          model: this.model,
-          contents: userMessage,
-          config: {
-            systemInstruction,
-            temperature: 0,
-            topP: 1,
-            topK: 1,
-            candidateCount: 1,
-            maxOutputTokens: 1024,
-            responseMimeType: 'application/json',
-            responseJsonSchema: aiClassificationJsonSchema,
-            safetySettings: this.buildSafetySettings(),
-            abortSignal: abortController.signal,
-          },
-        });
+      const response: GenerateContentResponse = await this.client.models.generateContent({
+        model: this.model,
+        contents: userMessage,
+        config: {
+          systemInstruction,
+          temperature: 0,
+          topP: 1,
+          topK: 1,
+          candidateCount: 1,
+          maxOutputTokens: 1024,
+          responseMimeType: 'application/json',
+          responseJsonSchema: aiClassificationJsonSchema,
+          safetySettings: this.buildSafetySettings(),
+          abortSignal: abortController.signal,
+        },
+      });
 
       this.checkSafetyBlock(response);
 
@@ -119,19 +96,14 @@ export class GeminiClient implements AiClientPort {
         throw new AiInvalidJsonError('', 'Empty response text from Gemini');
       }
 
-      this.logger.log(
-        `[GeminiClient] Received response (${text.length} chars)`,
-      );
+      this.logger.log(`[GeminiClient] Received response (${text.length} chars)`);
 
       return text;
     } catch (err: unknown) {
       if (err instanceof AiSafetyBlockedError) throw err;
       if (err instanceof AiInvalidJsonError) throw err;
 
-      if (
-        err instanceof DOMException ||
-        (err instanceof Error && err.name === 'AbortError')
-      ) {
+      if (err instanceof DOMException || (err instanceof Error && err.name === 'AbortError')) {
         throw new AiTimeoutError(this.timeoutMs);
       }
 
@@ -174,28 +146,22 @@ export class GeminiClient implements AiClientPort {
   private checkSafetyBlock(response: GenerateContentResponse): void {
     const promptFeedback = response.promptFeedback;
     if (promptFeedback?.blockReason) {
-      const reason =
-        promptFeedback.blockReasonMessage ??
-        promptFeedback.blockReason ??
-        'UNKNOWN';
+      const reason = promptFeedback.blockReasonMessage ?? promptFeedback.blockReason;
 
-      this.logger.error(
-        `[GeminiClient] Response blocked by safety filter: ${reason}`,
-      );
-      throw new AiSafetyBlockedError(String(reason));
+      this.logger.error(`[GeminiClient] Response blocked by safety filter: ${reason}`);
+      throw new AiSafetyBlockedError(reason);
     }
 
     const candidate = response.candidates?.[0];
-    if (candidate?.finishReason === 'SAFETY') {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- finishReason is a string from API response
+    if (candidate?.finishReason === ('SAFETY' as string)) {
       const ratings = candidate.safetyRatings
         ?.filter((r) => r.blocked)
         .map((r) => `${r.category}:${r.probability}`)
         .join(', ');
 
-      const reason = ratings || 'SAFETY (no details)';
-      this.logger.error(
-        `[GeminiClient] Candidate blocked by safety filter: ${reason}`,
-      );
+      const reason = ratings ?? 'SAFETY (no details)';
+      this.logger.error(`[GeminiClient] Candidate blocked by safety filter: ${reason}`);
       throw new AiSafetyBlockedError(reason);
     }
   }

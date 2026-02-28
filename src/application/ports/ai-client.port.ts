@@ -8,10 +8,6 @@
 import type { AiEnrichmentInput } from '../ai/types';
 
 export interface AiClientPort {
-  classify(input: AiEnrichmentInput): Promise<string>;
-  repair(
-    input: AiEnrichmentInput,
-    previousRaw: string,
-    error: string,
-  ): Promise<string>;
+  classify: (input: AiEnrichmentInput) => Promise<string>;
+  repair: (input: AiEnrichmentInput, previousRaw: string, error: string) => Promise<string>;
 }

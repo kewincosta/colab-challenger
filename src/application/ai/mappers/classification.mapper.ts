@@ -8,9 +8,7 @@
 import type { AiClassificationResult } from '../types';
 import type { AiClassification } from '../../../domain/reports/entities/report.entity';
 
-export function toAiClassification(
-  result: AiClassificationResult,
-): AiClassification {
+export function toAiClassification(result: AiClassificationResult): AiClassification {
   return {
     category: result.category,
     newCategorySuggestion: result.new_category_suggestion,

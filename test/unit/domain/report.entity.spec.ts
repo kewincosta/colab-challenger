@@ -136,7 +136,9 @@ describe('Report Entity', () => {
 
   it('updateDescription rejects empty string', () => {
     const report = Report.create(validProps());
-    expect(() => report.updateDescription('')).toThrow();
+    expect(() => {
+      report.updateDescription('');
+    }).toThrow();
   });
 
   it('moves to a new location via moveTo()', () => {

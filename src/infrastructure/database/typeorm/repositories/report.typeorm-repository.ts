@@ -1,5 +1,5 @@
-import { Repository } from 'typeorm';
-import { ReportRepository } from '../../../../domain/reports/repositories/report.repository';
+import type { Repository } from 'typeorm';
+import type { ReportRepository } from '../../../../domain/reports/repositories/report.repository';
 import { Report } from '../../../../domain/reports/entities/report.entity';
 import { Location } from '../../../../domain/reports/value-objects/location.value-object';
 import { ClassificationStatus } from '../../../../domain/reports/value-objects/classification-status.value-object';
@@ -12,8 +12,9 @@ export class ReportTypeOrmRepository implements ReportRepository {
     const entity = new ReportOrmEntity();
     const location = report.getLocationRaw();
 
-    if (report.getId()) {
-      entity.id = report.getId() as string;
+    const id = report.getId();
+    if (id) {
+      entity.id = id;
     }
     entity.title = report.getTitle();
     entity.description = report.getDescription();
@@ -62,8 +63,11 @@ export class ReportTypeOrmRepository implements ReportRepository {
               }
             : null,
         classificationStatus:
-          (entity.classificationStatus as ClassificationStatus) ?? ClassificationStatus.PENDING,
-        classificationAttempts: entity.classificationAttempts ?? 0,
+          entity.classificationStatus in ClassificationStatus
+            ? // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- validated by `in` check above
+              (entity.classificationStatus as ClassificationStatus)
+            : ClassificationStatus.PENDING,
+        classificationAttempts: entity.classificationAttempts,
         lastClassificationError: entity.lastClassificationError ?? null,
         classifiedAt: entity.classifiedAt ?? null,
       },

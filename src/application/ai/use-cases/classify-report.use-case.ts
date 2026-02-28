@@ -46,26 +46,17 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
    * 6. Cache and return result.
    */
   async execute(input: AiEnrichmentInput): Promise<AiClassificationResult> {
-    const cacheKey = buildCacheKey(
-      PROMPT_VERSION,
-      input.title,
-      input.description,
-      input.location,
-    );
+    const cacheKey = buildCacheKey(PROMPT_VERSION, input.title, input.description, input.location);
 
     // 1. Check cache
     const cached = this.cache.get(cacheKey);
     if (cached) {
-      this.logger.log(
-        `[ClassifyReportUseCase] Cache hit for key: ${cacheKey.substring(0, 12)}…`,
-      );
+      this.logger.log(`[ClassifyReportUseCase] Cache hit for key: ${cacheKey.substring(0, 12)}…`);
       return cached;
     }
 
     // 2. Call AI client
-    const rawResponse = await this.callAiClient(() =>
-      this.aiClient.classify(input),
-    );
+    const rawResponse = await this.callAiClient(async () => await this.aiClient.classify(input));
 
     // 3 & 4. Parse + validate
     const firstAttempt = this.parseAndValidate(rawResponse);
@@ -82,8 +73,8 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
       `[ClassifyReportUseCase] First attempt failed: ${firstAttempt.error}. Attempting repair.`,
     );
 
-    const repairRaw = await this.callAiClient(() =>
-      this.aiClient.repair(input, rawResponse, firstAttempt.error),
+    const repairRaw = await this.callAiClient(
+      async () => await this.aiClient.repair(input, rawResponse, firstAttempt.error),
     );
 
     const repairAttempt = this.parseAndValidate(repairRaw);
@@ -111,13 +102,9 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
       return await fn();
     } catch (err: unknown) {
       if (err instanceof AiTimeoutError) {
-        this.logger.error(
-          `[ClassifyReportUseCase] AI timeout: ${err.message}`,
-        );
+        this.logger.error(`[ClassifyReportUseCase] AI timeout: ${err.message}`);
       } else if (err instanceof AiSafetyBlockedError) {
-        this.logger.error(
-          `[ClassifyReportUseCase] Safety block: ${err.message}`,
-        );
+        this.logger.error(`[ClassifyReportUseCase] Safety block: ${err.message}`);
       }
       throw err;
     }
@@ -125,11 +112,10 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
 
   private parseAndValidate(
     raw: string,
-  ):
-    | { success: true; data: AiClassificationResult }
-    | { success: false; error: string } {
+  ): { success: true; data: AiClassificationResult } | { success: false; error: string } {
     // Strict JSON parse
-    let parsed: unknown;
+    // eslint-disable-next-line no-useless-assignment -- needed for scope: assigned inside try, used after catch
+    let parsed: unknown = undefined;
     try {
       parsed = JSON.parse(raw);
     } catch (err: unknown) {
@@ -140,19 +126,20 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
     // Zod validation (with refinement)
     const result = AiClassificationSchemaRefined.safeParse(parsed);
     if (!result.success) {
-      const zodErrors: Record<string, string[]> = {};
+      const zodErrors = new Map<string, string[]>();
       for (const issue of result.error.issues) {
         const path = issue.path.join('.');
-        if (!zodErrors[path]) zodErrors[path] = [];
-        zodErrors[path].push(issue.message);
+        const existing = zodErrors.get(path) ?? [];
+        existing.push(issue.message);
+        zodErrors.set(path, existing);
       }
       return {
         success: false,
-        error: `Zod validation error: ${JSON.stringify(zodErrors)}`,
+        error: `Zod validation error: ${JSON.stringify(Object.fromEntries(zodErrors))}`,
       };
     }
 
-    return { success: true, data: result.data as AiClassificationResult };
+    return { success: true, data: result.data };
   }
 
   private buildFinalError(raw: string, errorMsg: string): Error {
@@ -160,9 +147,11 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
       return new AiInvalidJsonError(raw, errorMsg);
     }
     if (errorMsg.startsWith('Zod validation error')) {
+      // eslint-disable-next-line no-useless-assignment -- reassigned in both try/catch branches
       let zodErrors: Record<string, string[]> = {};
       try {
         const inner = errorMsg.replace('Zod validation error: ', '');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- JSON.parse returns any
         zodErrors = JSON.parse(inner) as Record<string, string[]>;
       } catch {
         zodErrors = { _: [errorMsg] };

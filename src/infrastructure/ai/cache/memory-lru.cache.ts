@@ -13,7 +13,7 @@ export class MemoryLruCache<T> implements AiCache<T> {
   private readonly store = new Map<string, CacheEntry<T>>();
 
   constructor(
-    private readonly maxSize: number = 500,
+    private readonly maxSize = 500,
     private readonly ttlMs: number = 24 * 60 * 60 * 1000, // 24 hours
   ) {}
 

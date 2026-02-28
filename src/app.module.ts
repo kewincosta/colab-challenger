@@ -17,8 +17,7 @@ import { DomainExceptionFilter } from './shared/filters/domain-exception.filter'
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService<EnvConfig, true>) =>
-        buildTypeOrmConfig(config),
+      useFactory: (config: ConfigService<EnvConfig, true>) => buildTypeOrmConfig(config),
     }),
     BullModule.forRootAsync({
       inject: [ConfigService],

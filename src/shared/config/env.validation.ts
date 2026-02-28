@@ -54,16 +54,15 @@ export function validateEnv(raw: Record<string, unknown>): EnvConfig {
     message: issue.message,
   }));
 
-  console.error('\n========================================');
-  console.error('  ENV VALIDATION FAILED — cannot start');
-  console.error('========================================\n');
-
-  for (const { path, message } of issues) {
-    console.error(`  • ${path}: ${message}`);
-  }
-
+  // eslint-disable-next-line no-console -- intentional: fail-fast before logger is available
   console.error(
-    '\nCheck your .env file or docker-compose environment block.\n',
+    [
+      '\n========================================',
+      '  ENV VALIDATION FAILED — cannot start',
+      '========================================\n',
+      ...issues.map(({ path, message }) => `  • ${path}: ${message}`),
+      '\nCheck your .env file or docker-compose environment block.\n',
+    ].join('\n'),
   );
 
   process.exit(1);

@@ -8,5 +8,5 @@
 import type { AiClassificationResult, AiEnrichmentInput } from '../ai/types';
 
 export interface ClassifyReportPort {
-  execute(input: AiEnrichmentInput): Promise<AiClassificationResult>;
+  execute: (input: AiEnrichmentInput) => Promise<AiClassificationResult>;
 }

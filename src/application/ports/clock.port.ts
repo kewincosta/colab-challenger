@@ -6,5 +6,5 @@
  */
 
 export interface ClockPort {
-  now(): Date;
+  now: () => Date;
 }

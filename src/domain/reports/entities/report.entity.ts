@@ -1,4 +1,4 @@
-import { Location, LocationRaw } from '../value-objects/location.value-object';
+import type { Location, LocationRaw } from '../value-objects/location.value-object';
 import { ReportTitle } from '../value-objects/report-title.value-object';
 import { ReportDescription } from '../value-objects/report-description.value-object';
 import { ClassificationStatus } from '../value-objects/classification-status.value-object';
@@ -23,7 +23,7 @@ export interface ReportProps {
 }
 
 export class Report {
-  private id?: string;
+  private readonly id?: string;
   private readonly title: ReportTitle;
   private description: ReportDescription;
   private location: Location;

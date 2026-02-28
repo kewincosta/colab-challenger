@@ -18,7 +18,10 @@ function createMockLogger(): AppLoggerPort {
   };
 }
 
-function createMockHost(response: { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn> }) {
+function createMockHost(response: {
+  status: ReturnType<typeof vi.fn>;
+  json: ReturnType<typeof vi.fn>;
+}) {
   return {
     switchToHttp: () => ({
       getResponse: () => response,

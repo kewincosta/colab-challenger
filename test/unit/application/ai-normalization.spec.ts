@@ -37,20 +37,18 @@ describe('canonicalizeLocation', () => {
   });
 
   it('normalizes generic string locations', () => {
-    expect(canonicalizeLocation('  Main  Street  ')).toBe(
-      'STR:main street',
-    );
+    expect(canonicalizeLocation('  Main  Street  ')).toBe('STR:main street');
   });
 
   it('formats lat/lng object with 4 decimal precision', () => {
-    expect(
-      canonicalizeLocation({ lat: -23.550520123, lng: -46.633308456 }),
-    ).toBe('MAP:-23.5505,-46.6333');
+    expect(canonicalizeLocation({ lat: -23.550520123, lng: -46.633308456 })).toBe(
+      'MAP:-23.5505,-46.6333',
+    );
   });
 
   it('falls back to sorted JSON for unknown object shapes', () => {
     const result = canonicalizeLocation({ address: '123 St', city: 'SP' });
-    expect(result).toMatch(/^OBJ:/);
+    expect(result).toMatch(/^OBJ:/v);
     expect(result).toContain('"address"');
   });
 });
@@ -62,7 +60,7 @@ describe('canonicalizeLocation', () => {
 describe('buildCacheKey', () => {
   it('produces a 64-char hex SHA-256 hash', () => {
     const key = buildCacheKey('v1', 'title', 'desc', 'location');
-    expect(key).toMatch(/^[a-f0-9]{64}$/);
+    expect(key).toMatch(/^[a-f0-9]{64}$/v);
   });
 
   it('is deterministic — same inputs produce same key', () => {

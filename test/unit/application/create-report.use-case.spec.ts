@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CreateReportUseCase } from '../../../src/application/reports/use-cases/create-report.use-case';
-import { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
+import type { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
 import { ClassificationStatus } from '../../../src/domain/reports/value-objects/classification-status.value-object';
-import { AppLoggerPort } from '../../../src/application/ports/logger.port';
-import { QueueProducerPort } from '../../../src/application/ports/queue-producer.port';
-import { ClockPort } from '../../../src/application/ports/clock.port';
+import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
+import type { QueueProducerPort } from '../../../src/application/ports/queue-producer.port';
+import type { ClockPort } from '../../../src/application/ports/clock.port';
 
 class InMemoryReportRepository implements ReportRepository {
   public items: Report[] = [];

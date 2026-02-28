@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProcessClassificationUseCase } from '../../../src/application/reports/use-cases/process-classification.use-case';
-import { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
+import type { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
 import { Location } from '../../../src/domain/reports/value-objects/location.value-object';
 import { ClassificationStatus } from '../../../src/domain/reports/value-objects/classification-status.value-object';
-import { ClassifyReportPort } from '../../../src/application/ports/classify-report.port';
-import { AppLoggerPort } from '../../../src/application/ports/logger.port';
-import { ClockPort } from '../../../src/application/ports/clock.port';
+import type { ClassifyReportPort } from '../../../src/application/ports/classify-report.port';
+import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
+import type { ClockPort } from '../../../src/application/ports/clock.port';
 
 function createMockLogger(): AppLoggerPort {
   return { log: vi.fn(), error: vi.fn(), warn: vi.fn() };
@@ -115,9 +115,9 @@ describe('ProcessClassificationUseCase', () => {
     const error = new Error('AI service unavailable');
     (classifyReport.execute as ReturnType<typeof vi.fn>).mockRejectedValue(error);
 
-    await expect(
-      useCase.execute({ reportId: 'report-1', attemptsMade: 2 }),
-    ).rejects.toThrow('AI service unavailable');
+    await expect(useCase.execute({ reportId: 'report-1', attemptsMade: 2 })).rejects.toThrow(
+      'AI service unavailable',
+    );
 
     // save: PROCESSING + FAILED
     expect(repo.save).toHaveBeenCalledTimes(2);

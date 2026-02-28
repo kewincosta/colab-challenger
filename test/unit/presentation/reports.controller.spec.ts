@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ReportsController } from '../../../src/presentation/http/controllers/reports.controller';
-import { CreateReportUseCase } from '../../../src/application/reports/use-cases/create-report.use-case';
+import type { CreateReportUseCase } from '../../../src/application/reports/use-cases/create-report.use-case';
 import type { CreateReportDto } from '../../../src/presentation/http/dto/create-report.dto';
 
 function createMockCreateReportUseCase() {

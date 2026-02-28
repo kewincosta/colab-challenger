@@ -1,10 +1,13 @@
 import { Report } from '../../../domain/reports/entities/report.entity';
-import { Location, LocationRaw } from '../../../domain/reports/value-objects/location.value-object';
-import { ClassificationStatus } from '../../../domain/reports/value-objects/classification-status.value-object';
-import { ReportRepository } from '../../../domain/reports/repositories/report.repository';
-import { AppLoggerPort } from '../../ports/logger.port';
-import { QueueProducerPort } from '../../ports/queue-producer.port';
-import { ClockPort } from '../../ports/clock.port';
+import {
+  Location,
+  type LocationRaw,
+} from '../../../domain/reports/value-objects/location.value-object';
+import type { ClassificationStatus } from '../../../domain/reports/value-objects/classification-status.value-object';
+import type { ReportRepository } from '../../../domain/reports/repositories/report.repository';
+import type { AppLoggerPort } from '../../ports/logger.port';
+import type { QueueProducerPort } from '../../ports/queue-producer.port';
+import type { ClockPort } from '../../ports/clock.port';
 
 export interface CreateReportCommand {
   title: string;

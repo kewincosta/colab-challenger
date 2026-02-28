@@ -12,7 +12,10 @@ import { Injectable, Inject } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
-import type { QueueProducerPort, ClassificationJobPayload } from '../../application/ports/queue-producer.port';
+import type {
+  QueueProducerPort,
+  ClassificationJobPayload,
+} from '../../application/ports/queue-producer.port';
 import type { AppLoggerPort } from '../../application/ports/logger.port';
 import { APP_LOGGER_TOKEN } from '../../shared/constants/tokens';
 import { REPORT_CLASSIFICATION_QUEUE, CLASSIFY_REPORT_JOB } from './constants';
@@ -29,8 +32,6 @@ export class ClassificationProducer implements QueueProducerPort {
       jobId: payload.reportId, // Simple deduplication by report ID
     });
 
-    this.logger.log(
-      `[ClassificationProducer] Job published for report ${payload.reportId}`,
-    );
+    this.logger.log(`[ClassificationProducer] Job published for report ${payload.reportId}`);
   }
 }

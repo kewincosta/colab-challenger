@@ -7,11 +7,11 @@
  *   - On failure, marks the report as FAILED and re-throws so BullMQ can retry.
  */
 
-import { ReportRepository } from '../../../domain/reports/repositories/report.repository';
+import type { ReportRepository } from '../../../domain/reports/repositories/report.repository';
 import { ClassificationStatus } from '../../../domain/reports/value-objects/classification-status.value-object';
-import { ClassifyReportPort } from '../../ports/classify-report.port';
-import { AppLoggerPort } from '../../ports/logger.port';
-import { ClockPort } from '../../ports/clock.port';
+import type { ClassifyReportPort } from '../../ports/classify-report.port';
+import type { AppLoggerPort } from '../../ports/logger.port';
+import type { ClockPort } from '../../ports/clock.port';
 import { toAiClassification } from '../../ai/mappers/classification.mapper';
 
 export interface ProcessClassificationCommand {
@@ -32,17 +32,13 @@ export class ProcessClassificationUseCase {
 
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
-      this.logger.warn(
-        `[ProcessClassification] Report ${reportId} not found, skipping`,
-      );
+      this.logger.warn(`[ProcessClassification] Report ${reportId} not found, skipping`);
       return;
     }
 
     // Idempotency: skip if already classified
     if (report.getClassificationStatus() === ClassificationStatus.DONE) {
-      this.logger.log(
-        `[ProcessClassification] Report ${reportId} already classified, skipping`,
-      );
+      this.logger.log(`[ProcessClassification] Report ${reportId} already classified, skipping`);
       return;
     }
 

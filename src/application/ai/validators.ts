@@ -18,13 +18,10 @@ export const AiClassificationSchema = z.object({
   new_category_suggestion: z
     .string()
     .max(40)
-    .regex(/^[A-Z][A-Za-z ]*$/, 'Must be Title Case, no punctuation or emojis')
+    .regex(/^[A-Z][A-Za-z ]*$/v, 'Must be Title Case, no punctuation or emojis')
     .nullable(),
   priority: z.enum(PRIORITY_LEVELS),
-  technical_summary: z
-    .string()
-    .min(1)
-    .max(600),
+  technical_summary: z.string().min(1).max(600),
 });
 
 /**
@@ -49,6 +46,7 @@ export const AiClassificationSchemaRefined = AiClassificationSchema.refine(
  * the refinement is applied after parsing.
  */
 export const aiClassificationJsonSchema = zodToJsonSchema(
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Zod v4 types are incompatible with zodToJsonSchema parameter type
   AiClassificationSchema as unknown as Parameters<typeof zodToJsonSchema>[0],
   { target: 'openApi3' },
 );

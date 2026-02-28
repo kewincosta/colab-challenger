@@ -107,9 +107,7 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiInvalidJsonError,
-    );
+    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiInvalidJsonError);
   });
 
   it('throws AiSafetyBlockedError on promptFeedback blockReason', async () => {
@@ -122,9 +120,7 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiSafetyBlockedError,
-    );
+    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiSafetyBlockedError);
   });
 
   it('throws AiSafetyBlockedError on candidate finishReason=SAFETY', async () => {
@@ -144,9 +140,7 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiSafetyBlockedError,
-    );
+    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiSafetyBlockedError);
   });
 
   it('throws AiTimeoutError when request is aborted', async () => {
@@ -157,9 +151,7 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(
-      AiTimeoutError,
-    );
+    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiTimeoutError);
   });
 
   it('repair calls generateContent with repair prompt', async () => {

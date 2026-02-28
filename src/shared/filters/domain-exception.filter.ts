@@ -6,9 +6,7 @@ import { APP_LOGGER_TOKEN } from '../constants/tokens';
 
 @Catch(DomainException)
 export class DomainExceptionFilter implements ExceptionFilter {
-  constructor(
-    @Inject(APP_LOGGER_TOKEN) private readonly logger: AppLoggerPort,
-  ) {}
+  constructor(@Inject(APP_LOGGER_TOKEN) private readonly logger: AppLoggerPort) {}
 
   catch(exception: DomainException, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();

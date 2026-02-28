@@ -14,14 +14,10 @@ export class Location {
       return new Location(trimmed);
     }
 
-    if (typeof raw === 'object' && raw !== null) {
-      if (Object.keys(raw).length === 0) {
-        throw new InvalidLocationException('location object must not be empty');
-      }
-      return new Location({ ...raw });
+    if (Object.keys(raw).length === 0) {
+      throw new InvalidLocationException('location object must not be empty');
     }
-
-    throw new InvalidLocationException('must be a non-empty string or object');
+    return new Location({ ...raw });
   }
 
   getValue(): LocationRaw {
