@@ -47,28 +47,36 @@ export class ReportResponseDto {
 
   @ApiPropertyOptional({
     description: 'AI-assigned category for the urban issue',
-    example: 'Public Road',
+    example: 'Infraestrutura Urbana',
     nullable: true,
   })
   category!: string | null;
 
   @ApiPropertyOptional({
+    description: 'AI-assigned subcategory (specific issue type within the category)',
+    example: 'Buracos na via',
+    nullable: true,
+  })
+  subcategory!: string | null;
+
+  @ApiPropertyOptional({
     description: 'AI-assigned priority level',
-    example: 'High',
+    example: 'Alta',
     nullable: true,
   })
   priority!: string | null;
 
   @ApiPropertyOptional({
     description: 'AI-generated technical summary of the issue',
-    example: 'Road surface degradation requiring immediate patching to prevent vehicle damage.',
+    example:
+      'Degradação da superfície viária requerendo reparo imediato para prevenir danos veiculares.',
     nullable: true,
   })
   technicalSummary!: string | null;
 
   @ApiPropertyOptional({
-    description: 'AI-suggested new category when classified as "Other"',
-    example: 'Urban Fauna',
+    description: 'AI-suggested new category when classified as "Outros"',
+    example: 'Educação Municipal',
     nullable: true,
   })
   newCategorySuggestion!: string | null;

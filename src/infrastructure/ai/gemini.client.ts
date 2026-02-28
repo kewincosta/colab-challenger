@@ -1,8 +1,9 @@
 /**
  * Gemini API client wrapper for structured content generation.
  *
- * Implements AiClientPort, keeping Gemini-specific details isolated
- * in the infrastructure layer.
+ * Implements AiClientPort as a pure adapter: receives ready-to-send text
+ * (system instruction + user message) and an optional JSON schema,
+ * keeping all prompt construction in the application layer.
  *
  * References:
  * - https://ai.google.dev/gemini-api/docs?hl=pt-br#javascript
@@ -17,15 +18,12 @@ import type { ConfigService } from '@nestjs/config';
 
 import type { AiClientPort } from '../../application/ports/ai-client.port';
 import type { AppLoggerPort } from '../../application/ports/logger.port';
-import type { AiEnrichmentInput } from '../../application/ai/types';
 import type { EnvConfig } from '../../shared/config/env.validation';
-import { aiClassificationJsonSchema } from '../../application/ai/validators';
 import {
   AiSafetyBlockedError,
   AiTimeoutError,
   AiInvalidJsonError,
 } from '../../application/ai/errors';
-import { buildSystemInstruction, buildUserMessage, buildRepairMessage } from './prompt-builder';
 
 export class GeminiClient implements AiClientPort {
   private readonly client: GoogleGenAI;
@@ -44,28 +42,24 @@ export class GeminiClient implements AiClientPort {
   }
 
   /**
-   * Call Gemini with structured output mode and return the raw JSON string.
+   * Send a prompt to Gemini and return the raw text response.
+   *
+   * When responseJsonSchema is provided, Gemini is configured for
+   * structured JSON output mode.
    */
-  async classify(input: AiEnrichmentInput): Promise<string> {
-    const systemInstruction = buildSystemInstruction();
-    const userMessage = buildUserMessage(input);
-
-    return await this.callGemini(systemInstruction, userMessage);
+  async generate(
+    systemInstruction: string,
+    userMessage: string,
+    responseJsonSchema?: Record<string, unknown>,
+  ): Promise<string> {
+    return await this.callGemini(systemInstruction, userMessage, responseJsonSchema);
   }
 
-  /**
-   * Retry with a repair prompt when the initial response was invalid.
-   */
-  async repair(input: AiEnrichmentInput, previousRaw: string, error: string): Promise<string> {
-    const systemInstruction = buildSystemInstruction();
-    const repairMessage = buildRepairMessage(previousRaw, error);
-
-    this.logger.warn(`[GeminiClient] Attempting repair retry for input: "${input.title}"`);
-
-    return await this.callGemini(systemInstruction, repairMessage);
-  }
-
-  private async callGemini(systemInstruction: string, userMessage: string): Promise<string> {
+  private async callGemini(
+    systemInstruction: string,
+    userMessage: string,
+    responseJsonSchema?: Record<string, unknown>,
+  ): Promise<string> {
     const abortController = new AbortController();
     const timeout = setTimeout(() => {
       abortController.abort();
@@ -82,8 +76,12 @@ export class GeminiClient implements AiClientPort {
           topK: 1,
           candidateCount: 1,
           maxOutputTokens: 1024,
-          responseMimeType: 'application/json',
-          responseJsonSchema: aiClassificationJsonSchema,
+          ...(responseJsonSchema
+            ? {
+                responseMimeType: 'application/json',
+                responseJsonSchema,
+              }
+            : {}),
           safetySettings: this.buildSafetySettings(),
           abortSignal: abortController.signal,
         },

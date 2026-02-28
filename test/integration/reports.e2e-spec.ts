@@ -63,6 +63,7 @@ describe('Reports API (e2e)', () => {
     expect(response.body.description).toBe('Trash can overflowing in central park');
     expect(response.body.classificationStatus).toBe('PENDING');
     expect(response.body.category).toBeNull();
+    expect(response.body.subcategory).toBeNull();
     expect(response.body.priority).toBeNull();
     expect(response.body.technicalSummary).toBeNull();
     expect(response.body.newCategorySuggestion).toBeNull();

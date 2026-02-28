@@ -54,11 +54,9 @@ function createMockLogger(): AppLoggerPort {
   };
 }
 
-const VALID_INPUT = {
-  title: 'Broken streetlight',
-  description: 'Light out for 3 days.',
-  location: '01310-100',
-};
+const SYSTEM_INSTRUCTION = 'You are a classifier.';
+const USER_MESSAGE = 'Classify this report.';
+const JSON_SCHEMA = { type: 'object', properties: { category: { type: 'string' } } };
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -80,7 +78,7 @@ describe('GeminiClient', () => {
     expect(client).toBeDefined();
   });
 
-  it('returns raw text on successful classify call', async () => {
+  it('returns raw text on successful generate call', async () => {
     // Arrange
     mockGenerateContent.mockResolvedValue({
       text: '{"category":"Lighting"}',
@@ -90,7 +88,7 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act
-    const result = await client.classify(VALID_INPUT);
+    const result = await client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE, JSON_SCHEMA);
 
     // Assert
     expect(result).toBe('{"category":"Lighting"}');
@@ -107,7 +105,9 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiInvalidJsonError);
+    await expect(client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE)).rejects.toBeInstanceOf(
+      AiInvalidJsonError,
+    );
   });
 
   it('throws AiSafetyBlockedError on promptFeedback blockReason', async () => {
@@ -120,7 +120,9 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiSafetyBlockedError);
+    await expect(client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE)).rejects.toBeInstanceOf(
+      AiSafetyBlockedError,
+    );
   });
 
   it('throws AiSafetyBlockedError on candidate finishReason=SAFETY', async () => {
@@ -140,7 +142,9 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiSafetyBlockedError);
+    await expect(client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE)).rejects.toBeInstanceOf(
+      AiSafetyBlockedError,
+    );
   });
 
   it('throws AiTimeoutError when request is aborted', async () => {
@@ -151,10 +155,12 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act & Assert
-    await expect(client.classify(VALID_INPUT)).rejects.toBeInstanceOf(AiTimeoutError);
+    await expect(client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE)).rejects.toBeInstanceOf(
+      AiTimeoutError,
+    );
   });
 
-  it('repair calls generateContent with repair prompt', async () => {
+  it('passes JSON schema to Gemini config when provided', async () => {
     // Arrange
     mockGenerateContent.mockResolvedValue({
       text: '{"category":"Lighting"}',
@@ -164,11 +170,32 @@ describe('GeminiClient', () => {
     const client = new GeminiClient(createMockConfig(), logger);
 
     // Act
-    const result = await client.repair(VALID_INPUT, 'bad-json', 'parse error');
+    const result = await client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE, JSON_SCHEMA);
 
     // Assert
     expect(result).toBe('{"category":"Lighting"}');
     expect(mockGenerateContent).toHaveBeenCalledOnce();
-    expect(logger.warn).toHaveBeenCalled();
+    const callArgs = mockGenerateContent.mock.calls[0][0];
+    expect(callArgs.config.responseMimeType).toBe('application/json');
+    expect(callArgs.config.responseJsonSchema).toEqual(JSON_SCHEMA);
+  });
+
+  it('omits JSON schema config when not provided', async () => {
+    // Arrange
+    mockGenerateContent.mockResolvedValue({
+      text: 'plain text response',
+      promptFeedback: {},
+      candidates: [{ finishReason: 'STOP' }],
+    });
+    const client = new GeminiClient(createMockConfig(), logger);
+
+    // Act
+    const result = await client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE);
+
+    // Assert
+    expect(result).toBe('plain text response');
+    const callArgs = mockGenerateContent.mock.calls[0][0];
+    expect(callArgs.config.responseMimeType).toBeUndefined();
+    expect(callArgs.config.responseJsonSchema).toBeUndefined();
   });
 });

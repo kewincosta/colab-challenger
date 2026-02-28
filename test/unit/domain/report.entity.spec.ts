@@ -30,9 +30,10 @@ describe('Report Entity', () => {
         ...validProps(),
         createdAt: new Date('2025-01-15T10:00:00Z'),
         aiClassification: {
-          category: 'Lighting',
-          priority: 'High',
-          technicalSummary: 'Streetlight malfunction.',
+          category: 'Iluminação Pública',
+          subcategory: 'Poste apagado',
+          priority: 'Alta',
+          technicalSummary: 'Poste sem funcionamento.',
           newCategorySuggestion: null,
         },
         classificationStatus: ClassificationStatus.DONE,
@@ -44,9 +45,10 @@ describe('Report Entity', () => {
     expect(report.getId()).toBe('abc-123');
     expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
     expect(report.getAiClassification()).toEqual({
-      category: 'Lighting',
-      priority: 'High',
-      technicalSummary: 'Streetlight malfunction.',
+      category: 'Iluminação Pública',
+      subcategory: 'Poste apagado',
+      priority: 'Alta',
+      technicalSummary: 'Poste sem funcionamento.',
       newCategorySuggestion: null,
     });
   });
@@ -67,9 +69,10 @@ describe('Report Entity', () => {
         ...validProps(),
         classificationStatus: ClassificationStatus.DONE,
         aiClassification: {
-          category: 'Lighting',
-          priority: 'High',
-          technicalSummary: 'Done.',
+          category: 'Iluminação Pública',
+          subcategory: 'Poste apagado',
+          priority: 'Alta',
+          technicalSummary: 'Concluído.',
           newCategorySuggestion: null,
         },
       },
@@ -96,9 +99,10 @@ describe('Report Entity', () => {
     const completedAt = new Date('2026-02-27T12:00:00Z');
     report.completeClassification(
       {
-        category: 'Public Road',
-        priority: 'Medium',
-        technicalSummary: 'Surface degradation detected.',
+        category: 'Infraestrutura Urbana',
+        subcategory: 'Buracos na via',
+        priority: 'Média',
+        technicalSummary: 'Degradação de superfície detectada.',
         newCategorySuggestion: null,
       },
       completedAt,
@@ -107,9 +111,10 @@ describe('Report Entity', () => {
     expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
     expect(report.getClassifiedAt()).toEqual(completedAt);
     expect(report.getAiClassification()).toEqual({
-      category: 'Public Road',
-      priority: 'Medium',
-      technicalSummary: 'Surface degradation detected.',
+      category: 'Infraestrutura Urbana',
+      subcategory: 'Buracos na via',
+      priority: 'Média',
+      technicalSummary: 'Degradação de superfície detectada.',
       newCategorySuggestion: null,
     });
   });

@@ -17,6 +17,9 @@ export class ReportOrmEntity {
   @Column({ type: 'varchar', length: 50, nullable: true })
   category!: string | null;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  subcategory!: string | null;
+
   @Column({ type: 'varchar', length: 50, nullable: true })
   priority!: string | null;
 

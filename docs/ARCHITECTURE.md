@@ -18,6 +18,11 @@ Project layout (core parts only):
   - `reports/repositories` – Repository interfaces (e.g., `ReportRepository`).
 - `src/application`
   - `reports/use-cases` – Use cases such as `CreateReportUseCase` orchestrating domain logic.
+  - `ai/use-cases` – AI orchestration use cases such as `ClassifyReportUseCase`.
+  - `ai/prompt-builder` – Pure functions for prompt construction (system instruction, user message, repair). Contains business rules (taxonomy, priorities, classification criteria) — provider-agnostic.
+  - `ai/types` – AI classification types, taxonomy constants, and enrichment input/output contracts.
+  - `ai/validators` – Zod schemas for AI response validation and JSON schema derivation.
+  - `ports/` – Abstractions consumed by use cases (`AiClientPort`, `ReportRepository`, `AiCache`, etc.).
 - `src/infrastructure`
   - `database/typeorm/entities` – TypeORM entities mapping domain to PostgreSQL tables.
   - `database/typeorm/repositories` – Concrete repository implementations.
@@ -41,13 +46,16 @@ Project layout (core parts only):
 
 - Contains **use cases** implementing application-specific workflows.
 - `CreateReportUseCase` accepts a simple command object and coordinates entity creation and persistence via `ReportRepository`.
+- `ClassifyReportUseCase` orchestrates AI classification: builds prompts via pure functions in `prompt-builder`, calls `AiClientPort.generate()` with ready-to-send text and JSON schema, validates responses with Zod, and handles repair retries.
+- `prompt-builder` contains pure functions encoding business rules (municipal taxonomy, priority guidelines, anti-hallucination rules). It is provider-agnostic — no Gemini, OpenAI, or framework imports.
 - The layer is pure TypeScript and depends only on domain interfaces and entities, not on NestJS or TypeORM.
 
 ### Infrastructure Layer
 
-- Contains all **technical details**: database access, TypeORM entities, external services (future: AI providers, queues, etc.).
+- Contains all **technical details**: database access, TypeORM entities, external service adapters.
 - `ReportOrmEntity` maps the `Report` aggregate to a `reports` table using PostgreSQL types, including JSONB for location.
 - `ReportTypeOrmRepository` implements `ReportRepository` by mapping between domain objects and `ReportOrmEntity` and delegating to TypeORM.
+- `GeminiClient` implements `AiClientPort` as a pure adapter: receives ready-to-send strings (system instruction + user message) and an optional JSON schema, forwards them to the Gemini API, and returns raw text. It contains no prompt construction or business rules.
 
 ### Presentation Layer
 
@@ -72,14 +80,15 @@ Rules:
 
 NestJS DI wiring (modules/providers) lives at the edges (presentation/infrastructure), ensuring that domain and application can be reused in other environments (CLI, message consumers, tests) without change.
 
-## 4. AI Integration Support
+## 4. AI Integration
 
-This architecture is designed to be **AI-first friendly**:
+The AI classification pipeline follows Clean Architecture strictly:
 
-- Future AI triage will live in the **application layer** as use cases or services orchestrating AI calls.
-- A `TriageService` interface can be defined in the domain/application and implemented in the infrastructure layer as an `LlmTriageAdapter`.
-- HTTP controllers and DTOs will remain unaware of specific LLM providers; they will only interact with application-level contracts.
-- The existing `Report` entity and `Location` value object can be extended with AI triage metadata (severity, recommended department, SLA) without changing controllers.
+- **Prompt construction** lives in the **application layer** (`ai/prompt-builder.ts`) as pure functions. These encode business rules: municipal taxonomy, priority guidelines, conflict resolution, anti-hallucination rules, and input security. They are completely provider-agnostic.
+- **`ClassifyReportUseCase`** (application layer) orchestrates the full flow: builds system instruction + user message, calls `AiClientPort.generate()`, validates the JSON response with Zod, and triggers repair retries when needed. It passes the JSON schema as a parameter, keeping the AI client decoupled from specific response structures.
+- **`AiClientPort`** is a minimal port with a single `generate(systemInstruction, userMessage, responseJsonSchema?)` method. It receives ready-to-send text and returns raw text — no knowledge of reports, taxonomy, or classification.
+- **`GeminiClient`** (infrastructure layer) implements `AiClientPort`. It handles only Gemini-specific concerns: SDK initialization, timeout/abort, safety filters, structured output mode. Swapping to another provider (OpenAI, Anthropic) requires only a new adapter — prompts and validation remain unchanged.
+- **`ProcessClassificationUseCase`** (application layer) consumes `ClassifyReportPort` (implemented by `ClassifyReportUseCase`) to process BullMQ jobs. It manages the report lifecycle (fetch → classify → persist) without knowledge of AI internals.
 
 ## 5. Trade-offs
 

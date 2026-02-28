@@ -5,38 +5,57 @@
  * AI classification response. Used for both validation and to derive
  * the JSON schema sent to AI providers.
  *
+ * Supports hierarchical taxonomy: subcategory must belong to the selected category.
+ *
  * References:
  * - https://ai.google.dev/gemini-api/docs/structured-output
  */
 
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { REPORT_CATEGORIES, PRIORITY_LEVELS } from './types';
+import {
+  REPORT_CATEGORIES,
+  PRIORITY_LEVELS,
+  ALL_SUBCATEGORIES,
+  CATEGORY_SUBCATEGORIES,
+} from './types';
+import type { ReportCategory } from './types';
 
 export const AiClassificationSchema = z.object({
-  category: z.enum(REPORT_CATEGORIES),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- z.enum requires mutable tuple; our readonly arrays are safe
+  category: z.enum(REPORT_CATEGORIES as unknown as [string, ...string[]]),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- z.enum requires mutable tuple; our readonly arrays are safe
+  subcategory: z.enum(ALL_SUBCATEGORIES as unknown as [string, ...string[]]).nullable(),
   new_category_suggestion: z
     .string()
     .max(40)
-    .regex(/^[A-Z][A-Za-z ]*$/v, 'Must be Title Case, no punctuation or emojis')
+    .regex(/^[A-ZÀ-Ú][A-Za-zà-ú ]*$/v, 'Deve iniciar com maiúscula, sem pontuação ou emojis')
     .nullable(),
   priority: z.enum(PRIORITY_LEVELS),
   technical_summary: z.string().min(1).max(600),
 });
 
 /**
- * Refine: if category is "Other", new_category_suggestion is required.
- * If category is NOT "Other", new_category_suggestion must be null.
+ * Refinements:
+ * 1. category="Outros" → subcategory must be null, new_category_suggestion required.
+ * 2. category!="Outros" → subcategory required and must belong to that category's list.
+ * 3. category!="Outros" → new_category_suggestion must be null.
  */
 export const AiClassificationSchemaRefined = AiClassificationSchema.refine(
   (data) => {
-    if (data.category === 'Other') return data.new_category_suggestion !== null;
-    return data.new_category_suggestion === null;
+    if (data.category === 'Outros') {
+      return data.subcategory === null && data.new_category_suggestion !== null;
+    }
+    if (data.subcategory === null) return false;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- category is validated by z.enum above
+    const validSubs = CATEGORY_SUBCATEGORIES[data.category as ReportCategory] as readonly string[];
+    return validSubs.includes(data.subcategory) && data.new_category_suggestion === null;
   },
   {
     message:
-      'new_category_suggestion is required when category is "Other" and must be null otherwise',
-    path: ['new_category_suggestion'],
+      'Quando category="Outros": subcategory=null e new_category_suggestion obrigatório. ' +
+      'Caso contrário: subcategory deve pertencer à categoria e new_category_suggestion=null.',
+    path: ['subcategory'],
   },
 );
 

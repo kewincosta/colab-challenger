@@ -5,34 +5,38 @@ import type { AiClassificationResult } from '../../../src/application/ai/types';
 describe('toAiClassification mapper', () => {
   it('maps snake_case AI result to camelCase domain classification', () => {
     const aiResult: AiClassificationResult = {
-      category: 'Lighting',
+      category: 'Iluminação Pública',
+      subcategory: 'Poste apagado',
       new_category_suggestion: null,
-      priority: 'High',
-      technical_summary: 'Streetlight malfunction.',
+      priority: 'Alta',
+      technical_summary: 'Poste sem funcionamento.',
     };
 
     const result = toAiClassification(aiResult);
 
     expect(result).toEqual({
-      category: 'Lighting',
+      category: 'Iluminação Pública',
+      subcategory: 'Poste apagado',
       newCategorySuggestion: null,
-      priority: 'High',
-      technicalSummary: 'Streetlight malfunction.',
+      priority: 'Alta',
+      technicalSummary: 'Poste sem funcionamento.',
     });
   });
 
-  it('maps "Other" category with suggestion correctly', () => {
+  it('maps "Outros" category with suggestion correctly', () => {
     const aiResult: AiClassificationResult = {
-      category: 'Other',
-      new_category_suggestion: 'Urban Fauna',
-      priority: 'Low',
-      technical_summary: 'Unusual urban fauna spotted.',
+      category: 'Outros',
+      subcategory: null,
+      new_category_suggestion: 'Educação Municipal',
+      priority: 'Baixa',
+      technical_summary: 'Demanda fora do escopo das categorias existentes.',
     };
 
     const result = toAiClassification(aiResult);
 
-    expect(result.category).toBe('Other');
-    expect(result.newCategorySuggestion).toBe('Urban Fauna');
-    expect(result.technicalSummary).toBe('Unusual urban fauna spotted.');
+    expect(result.category).toBe('Outros');
+    expect(result.subcategory).toBeNull();
+    expect(result.newCategorySuggestion).toBe('Educação Municipal');
+    expect(result.technicalSummary).toBe('Demanda fora do escopo das categorias existentes.');
   });
 });

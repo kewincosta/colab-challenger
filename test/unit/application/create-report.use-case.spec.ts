@@ -71,6 +71,7 @@ describe('CreateReportUseCase', () => {
     expect(result.location).toBe('5th Avenue & Pine St');
     expect(result.classificationStatus).toBe(ClassificationStatus.PENDING);
     expect(result.category).toBeNull();
+    expect(result.subcategory).toBeNull();
     expect(result.priority).toBeNull();
     expect(result.technicalSummary).toBeNull();
     expect(result.newCategorySuggestion).toBeNull();

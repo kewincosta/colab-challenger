@@ -13,6 +13,7 @@ function buildSavedEntity(overrides: Partial<ReportOrmEntity> = {}): ReportOrmEn
   saved.description = overrides.description ?? 'Deep pothole near bus stop';
   saved.location = overrides.location ?? 'Main St';
   saved.category = overrides.category ?? null;
+  saved.subcategory = overrides.subcategory ?? null;
   saved.priority = overrides.priority ?? null;
   saved.technicalSummary = overrides.technicalSummary ?? null;
   saved.newCategorySuggestion = overrides.newCategorySuggestion ?? null;
@@ -64,6 +65,7 @@ describe('ReportTypeOrmRepository', () => {
           description: entity.description,
           location: entity.location,
           category: entity.category,
+          subcategory: entity.subcategory,
           priority: entity.priority,
           technicalSummary: entity.technicalSummary,
           newCategorySuggestion: entity.newCategorySuggestion,
@@ -84,9 +86,10 @@ describe('ReportTypeOrmRepository', () => {
     report.startClassification();
     report.completeClassification(
       {
-        category: 'Lighting',
-        priority: 'High',
-        technicalSummary: 'Streetlight malfunction requiring immediate repair.',
+        category: 'Iluminação Pública',
+        subcategory: 'Poste danificado',
+        priority: 'Alta',
+        technicalSummary: 'Poste com defeito necessitando reparo imediato.',
         newCategorySuggestion: null,
       },
       classifiedAt,
@@ -97,15 +100,17 @@ describe('ReportTypeOrmRepository', () => {
     expect(saved.getId()).toBe('uuid-2');
     expect(saved.getClassificationStatus()).toBe(ClassificationStatus.DONE);
     expect(saved.getAiClassification()).toEqual({
-      category: 'Lighting',
-      priority: 'High',
-      technicalSummary: 'Streetlight malfunction requiring immediate repair.',
+      category: 'Iluminação Pública',
+      subcategory: 'Poste danificado',
+      priority: 'Alta',
+      technicalSummary: 'Poste com defeito necessitando reparo imediato.',
       newCategorySuggestion: null,
     });
 
     const savedEntity = (ormRepo.save as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as ReportOrmEntity;
-    expect(savedEntity.category).toBe('Lighting');
+    expect(savedEntity.category).toBe('Iluminação Pública');
+    expect(savedEntity.subcategory).toBe('Poste danificado');
     expect(savedEntity.classificationStatus).toBe('DONE');
   });
 

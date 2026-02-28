@@ -22,10 +22,11 @@ const VALID_INPUT: AiEnrichmentInput = {
 };
 
 const VALID_RESULT: AiClassificationResult = {
-  category: 'Lighting',
+  category: 'Iluminação Pública',
+  subcategory: 'Poste apagado',
   new_category_suggestion: null,
-  priority: 'Medium',
-  technical_summary: 'Non-functional streetlight reported on Rua das Flores.',
+  priority: 'Média',
+  technical_summary: 'Poste sem funcionamento reportado na Rua das Flores.',
 };
 
 const VALID_JSON = JSON.stringify(VALID_RESULT);
@@ -44,8 +45,7 @@ function createMockLogger(): AppLoggerPort {
 
 function createMockAiClient(overrides: Partial<AiClientPort> = {}): AiClientPort {
   return {
-    classify: vi.fn<AiClientPort['classify']>().mockResolvedValue(VALID_JSON),
-    repair: vi.fn<AiClientPort['repair']>().mockResolvedValue(VALID_JSON),
+    generate: vi.fn<AiClientPort['generate']>().mockResolvedValue(VALID_JSON),
     ...overrides,
   };
 }
@@ -85,8 +85,7 @@ describe('ClassifyReportUseCase', () => {
 
     // Assert
     expect(result).toEqual(VALID_RESULT);
-    expect(aiClient.classify).toHaveBeenCalledOnce();
-    expect(aiClient.repair).not.toHaveBeenCalled();
+    expect(aiClient.generate).toHaveBeenCalledOnce();
     expect(cache.set).toHaveBeenCalledOnce();
   });
 
@@ -103,15 +102,17 @@ describe('ClassifyReportUseCase', () => {
 
     // Assert
     expect(result).toEqual(VALID_RESULT);
-    expect(aiClient.classify).not.toHaveBeenCalled();
+    expect(aiClient.generate).not.toHaveBeenCalled();
     expect(cache.set).not.toHaveBeenCalled();
   });
 
   it('retries with repair when first attempt returns invalid JSON', async () => {
-    // Arrange
+    // Arrange — first call (classify) returns invalid, second call (repair) returns valid
     const aiClient = createMockAiClient({
-      classify: vi.fn<AiClientPort['classify']>().mockResolvedValue('not-json'),
-      repair: vi.fn<AiClientPort['repair']>().mockResolvedValue(VALID_JSON),
+      generate: vi
+        .fn<AiClientPort['generate']>()
+        .mockResolvedValueOnce('not-json')
+        .mockResolvedValueOnce(VALID_JSON),
     });
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
@@ -121,22 +122,24 @@ describe('ClassifyReportUseCase', () => {
 
     // Assert
     expect(result).toEqual(VALID_RESULT);
-    expect(aiClient.classify).toHaveBeenCalledOnce();
-    expect(aiClient.repair).toHaveBeenCalledOnce();
+    expect(aiClient.generate).toHaveBeenCalledTimes(2);
     expect(cache.set).toHaveBeenCalledOnce();
   });
 
   it('retries with repair when first attempt fails Zod validation', async () => {
     // Arrange — valid JSON but invalid schema (missing required field)
     const invalidPayload = JSON.stringify({
-      category: 'Lighting',
+      category: 'Iluminação Pública',
+      subcategory: 'Poste apagado',
       new_category_suggestion: null,
-      priority: 'Medium',
+      priority: 'Média',
       // technical_summary missing
     });
     const aiClient = createMockAiClient({
-      classify: vi.fn<AiClientPort['classify']>().mockResolvedValue(invalidPayload),
-      repair: vi.fn<AiClientPort['repair']>().mockResolvedValue(VALID_JSON),
+      generate: vi
+        .fn<AiClientPort['generate']>()
+        .mockResolvedValueOnce(invalidPayload)
+        .mockResolvedValueOnce(VALID_JSON),
     });
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
@@ -146,14 +149,16 @@ describe('ClassifyReportUseCase', () => {
 
     // Assert
     expect(result).toEqual(VALID_RESULT);
-    expect(aiClient.repair).toHaveBeenCalledOnce();
+    expect(aiClient.generate).toHaveBeenCalledTimes(2);
   });
 
   it('throws AiInvalidJsonError when both attempts return invalid JSON', async () => {
-    // Arrange
+    // Arrange — both calls return unparseable JSON
     const aiClient = createMockAiClient({
-      classify: vi.fn<AiClientPort['classify']>().mockResolvedValue('bad{json'),
-      repair: vi.fn<AiClientPort['repair']>().mockResolvedValue('still{bad'),
+      generate: vi
+        .fn<AiClientPort['generate']>()
+        .mockResolvedValueOnce('bad{json')
+        .mockResolvedValueOnce('still{bad'),
     });
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
@@ -164,16 +169,15 @@ describe('ClassifyReportUseCase', () => {
   });
 
   it('throws AiValidationError when both attempts fail Zod validation', async () => {
-    // Arrange — valid JSON but wrong enum value
+    // Arrange — valid JSON but wrong enum value on both calls
     const invalidPayload = JSON.stringify({
       category: 'InvalidCategory',
       new_category_suggestion: null,
-      priority: 'Medium',
+      priority: 'Média',
       technical_summary: 'Summary.',
     });
     const aiClient = createMockAiClient({
-      classify: vi.fn<AiClientPort['classify']>().mockResolvedValue(invalidPayload),
-      repair: vi.fn<AiClientPort['repair']>().mockResolvedValue(invalidPayload),
+      generate: vi.fn<AiClientPort['generate']>().mockResolvedValue(invalidPayload),
     });
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
@@ -182,10 +186,10 @@ describe('ClassifyReportUseCase', () => {
     await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiValidationError);
   });
 
-  it('propagates AiTimeoutError from classify call', async () => {
+  it('propagates AiTimeoutError from first generate call', async () => {
     // Arrange
     const aiClient = createMockAiClient({
-      classify: vi.fn<AiClientPort['classify']>().mockRejectedValue(new AiTimeoutError(30_000)),
+      generate: vi.fn<AiClientPort['generate']>().mockRejectedValue(new AiTimeoutError(30_000)),
     });
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
@@ -195,11 +199,11 @@ describe('ClassifyReportUseCase', () => {
     expect(logger.error).toHaveBeenCalled();
   });
 
-  it('propagates AiSafetyBlockedError from classify call', async () => {
+  it('propagates AiSafetyBlockedError from first generate call', async () => {
     // Arrange
     const aiClient = createMockAiClient({
-      classify: vi
-        .fn<AiClientPort['classify']>()
+      generate: vi
+        .fn<AiClientPort['generate']>()
         .mockRejectedValue(new AiSafetyBlockedError('HARM_CATEGORY_HARASSMENT')),
     });
     const cache = createMockCache();
@@ -210,11 +214,13 @@ describe('ClassifyReportUseCase', () => {
     expect(logger.error).toHaveBeenCalled();
   });
 
-  it('propagates AiTimeoutError from repair call', async () => {
-    // Arrange — first attempt fails validation, repair times out
+  it('propagates AiTimeoutError from repair generate call', async () => {
+    // Arrange — first call returns invalid JSON, second call (repair) times out
     const aiClient = createMockAiClient({
-      classify: vi.fn<AiClientPort['classify']>().mockResolvedValue('not-json'),
-      repair: vi.fn<AiClientPort['repair']>().mockRejectedValue(new AiTimeoutError(30_000)),
+      generate: vi
+        .fn<AiClientPort['generate']>()
+        .mockResolvedValueOnce('not-json')
+        .mockRejectedValueOnce(new AiTimeoutError(30_000)),
     });
     const cache = createMockCache();
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);

@@ -5,6 +5,7 @@ import { ClassificationStatus } from '../value-objects/classification-status.val
 
 export interface AiClassification {
   readonly category: string;
+  readonly subcategory: string | null;
   readonly newCategorySuggestion: string | null;
   readonly priority: string;
   readonly technicalSummary: string;

@@ -16,7 +16,7 @@ import type { AiClientPort } from '../../ports/ai-client.port';
 import type { AiCache } from '../../ports/ai-cache.port';
 import type { AppLoggerPort } from '../../ports/logger.port';
 import type { ClassifyReportPort } from '../../ports/classify-report.port';
-import { AiClassificationSchemaRefined } from '../validators';
+import { AiClassificationSchemaRefined, aiClassificationJsonSchema } from '../validators';
 import { buildCacheKey } from '../normalization';
 import {
   AiInvalidJsonError,
@@ -24,6 +24,7 @@ import {
   AiTimeoutError,
   AiSafetyBlockedError,
 } from '../errors';
+import { buildSystemInstruction, buildUserMessage, buildRepairMessage } from '../prompt-builder';
 import { PROMPT_VERSION } from '../types';
 import type { AiClassificationResult, AiEnrichmentInput } from '../types';
 
@@ -39,11 +40,12 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
    *
    * Flow:
    * 1. Check exact cache.
-   * 2. Call AI client for structured classification.
-   * 3. Parse JSON strictly.
-   * 4. Validate with Zod (refined schema).
-   * 5. On parse/validation failure, attempt one repair retry.
-   * 6. Cache and return result.
+   * 2. Build prompts (system instruction + user message).
+   * 3. Call AI client with prompts and JSON schema.
+   * 4. Parse JSON strictly.
+   * 5. Validate with Zod (refined schema).
+   * 6. On parse/validation failure, build repair prompt and retry.
+   * 7. Cache and return result.
    */
   async execute(input: AiEnrichmentInput): Promise<AiClassificationResult> {
     const cacheKey = buildCacheKey(PROMPT_VERSION, input.title, input.description, input.location);
@@ -55,10 +57,18 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
       return cached;
     }
 
-    // 2. Call AI client
-    const rawResponse = await this.callAiClient(async () => await this.aiClient.classify(input));
+    // 2. Build prompts
+    const systemInstruction = buildSystemInstruction();
+    const userMessage = buildUserMessage(input);
 
-    // 3 & 4. Parse + validate
+    const jsonSchema = aiClassificationJsonSchema as Record<string, unknown>;
+
+    // 3. Call AI client
+    const rawResponse = await this.callAiClient(
+      async () => await this.aiClient.generate(systemInstruction, userMessage, jsonSchema),
+    );
+
+    // 4 & 5. Parse + validate
     const firstAttempt = this.parseAndValidate(rawResponse);
     if (firstAttempt.success) {
       this.cache.set(cacheKey, firstAttempt.data);
@@ -68,13 +78,14 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
       return firstAttempt.data;
     }
 
-    // 5. Repair retry
+    // 6. Repair retry
     this.logger.warn(
       `[ClassifyReportUseCase] First attempt failed: ${firstAttempt.error}. Attempting repair.`,
     );
 
+    const repairMessage = buildRepairMessage(rawResponse, firstAttempt.error);
     const repairRaw = await this.callAiClient(
-      async () => await this.aiClient.repair(input, rawResponse, firstAttempt.error),
+      async () => await this.aiClient.generate(systemInstruction, repairMessage, jsonSchema),
     );
 
     const repairAttempt = this.parseAndValidate(repairRaw);
@@ -139,7 +150,8 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
       };
     }
 
-    return { success: true, data: result.data };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Zod widens enum literals to string; the schema guarantees correctness
+    return { success: true, data: result.data as AiClassificationResult };
   }
 
   private buildFinalError(raw: string, errorMsg: string): Error {

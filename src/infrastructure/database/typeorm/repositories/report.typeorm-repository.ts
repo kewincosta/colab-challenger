@@ -9,30 +9,8 @@ export class ReportTypeOrmRepository implements ReportRepository {
   constructor(private readonly ormRepository: Repository<ReportOrmEntity>) {}
 
   async save(report: Report): Promise<Report> {
-    const entity = new ReportOrmEntity();
-    const location = report.getLocationRaw();
-
-    const id = report.getId();
-    if (id) {
-      entity.id = id;
-    }
-    entity.title = report.getTitle();
-    entity.description = report.getDescription();
-    entity.location = location;
-
-    const aiClassification = report.getAiClassification();
-    entity.category = aiClassification?.category ?? null;
-    entity.priority = aiClassification?.priority ?? null;
-    entity.technicalSummary = aiClassification?.technicalSummary ?? null;
-    entity.newCategorySuggestion = aiClassification?.newCategorySuggestion ?? null;
-
-    entity.classificationStatus = report.getClassificationStatus();
-    entity.classificationAttempts = report.getClassificationAttempts();
-    entity.lastClassificationError = report.getLastClassificationError();
-    entity.classifiedAt = report.getClassifiedAt();
-
+    const entity = this.toOrmEntity(report);
     const saved = await this.ormRepository.save(entity);
-
     return this.toDomain(saved);
   }
 
@@ -42,6 +20,51 @@ export class ReportTypeOrmRepository implements ReportRepository {
       return null;
     }
     return this.toDomain(entity);
+  }
+
+  private toOrmEntity(report: Report): ReportOrmEntity {
+    const entity = new ReportOrmEntity();
+
+    const id = report.getId();
+    if (id) {
+      entity.id = id;
+    }
+    entity.title = report.getTitle();
+    entity.description = report.getDescription();
+    entity.location = report.getLocationRaw();
+
+    Object.assign(entity, this.extractClassificationFields(report));
+
+    return entity;
+  }
+
+  private extractClassificationFields(
+    report: Report,
+  ): Pick<
+    ReportOrmEntity,
+    | 'category'
+    | 'subcategory'
+    | 'priority'
+    | 'technicalSummary'
+    | 'newCategorySuggestion'
+    | 'classificationStatus'
+    | 'classificationAttempts'
+    | 'lastClassificationError'
+    | 'classifiedAt'
+  > {
+    const ai = report.getAiClassification();
+    const hasAi = ai !== null;
+    return {
+      category: hasAi ? ai.category : null,
+      subcategory: hasAi ? ai.subcategory : null,
+      priority: hasAi ? ai.priority : null,
+      technicalSummary: hasAi ? ai.technicalSummary : null,
+      newCategorySuggestion: hasAi ? ai.newCategorySuggestion : null,
+      classificationStatus: report.getClassificationStatus(),
+      classificationAttempts: report.getClassificationAttempts(),
+      lastClassificationError: report.getLastClassificationError(),
+      classifiedAt: report.getClassifiedAt(),
+    };
   }
 
   private toDomain(entity: ReportOrmEntity): Report {
@@ -57,6 +80,7 @@ export class ReportTypeOrmRepository implements ReportRepository {
           entity.category && entity.priority && entity.technicalSummary
             ? {
                 category: entity.category,
+                subcategory: entity.subcategory,
                 priority: entity.priority,
                 technicalSummary: entity.technicalSummary,
                 newCategorySuggestion: entity.newCategorySuggestion ?? null,

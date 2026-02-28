@@ -47,10 +47,11 @@ describe('ProcessClassificationUseCase', () => {
     };
     classifyReport = {
       execute: vi.fn().mockResolvedValue({
-        category: 'Lighting',
+        category: 'Iluminação Pública',
+        subcategory: 'Poste danificado',
         new_category_suggestion: null,
-        priority: 'High',
-        technical_summary: 'Streetlight malfunction requiring immediate repair.',
+        priority: 'Alta',
+        technical_summary: 'Poste com defeito necessitando reparo imediato.',
       }),
     };
     logger = createMockLogger();
@@ -68,10 +69,11 @@ describe('ProcessClassificationUseCase', () => {
     const lastSaved = savedReports[savedReports.length - 1];
     expect(lastSaved.getClassificationStatus()).toBe(ClassificationStatus.DONE);
     expect(lastSaved.getAiClassification()).toEqual({
-      category: 'Lighting',
+      category: 'Iluminação Pública',
+      subcategory: 'Poste danificado',
       newCategorySuggestion: null,
-      priority: 'High',
-      technicalSummary: 'Streetlight malfunction requiring immediate repair.',
+      priority: 'Alta',
+      technicalSummary: 'Poste com defeito necessitando reparo imediato.',
     });
     expect(lastSaved.getClassifiedAt()).toEqual(new Date('2026-02-27T12:00:00Z'));
   });
@@ -94,9 +96,10 @@ describe('ProcessClassificationUseCase', () => {
         location: Location.create('Test'),
         classificationStatus: ClassificationStatus.DONE,
         aiClassification: {
-          category: 'Lighting',
-          priority: 'High',
-          technicalSummary: 'Already classified.',
+          category: 'Iluminação Pública',
+          subcategory: 'Poste apagado',
+          priority: 'Alta',
+          technicalSummary: 'Já classificado.',
           newCategorySuggestion: null,
         },
       },
