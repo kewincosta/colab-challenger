@@ -51,7 +51,7 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
     const cacheKey = buildCacheKey(PROMPT_VERSION, input.title, input.description, input.location);
 
     // 1. Check cache
-    const cached = this.cache.get(cacheKey);
+    const cached = await this.cache.get(cacheKey);
     if (cached) {
       this.logger.log(`[ClassifyReportUseCase] Cache hit for key: ${cacheKey.substring(0, 12)}…`);
       return cached;
@@ -71,7 +71,7 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
     // 4 & 5. Parse + validate
     const firstAttempt = this.parseAndValidate(rawResponse);
     if (firstAttempt.success) {
-      this.cache.set(cacheKey, firstAttempt.data);
+      await this.cache.set(cacheKey, firstAttempt.data);
       this.logger.log(
         `[ClassifyReportUseCase] Classification successful: category=${firstAttempt.data.category}, priority=${firstAttempt.data.priority}`,
       );
@@ -90,7 +90,7 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
 
     const repairAttempt = this.parseAndValidate(repairRaw);
     if (repairAttempt.success) {
-      this.cache.set(cacheKey, repairAttempt.data);
+      await this.cache.set(cacheKey, repairAttempt.data);
       this.logger.log(
         `[ClassifyReportUseCase] Repair successful: category=${repairAttempt.data.category}, priority=${repairAttempt.data.priority}`,
       );

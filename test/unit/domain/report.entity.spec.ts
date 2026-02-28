@@ -16,37 +16,24 @@ describe('Report Entity', () => {
     expect(report.getId()).toBeUndefined();
     expect(report.getTitle()).toBe('Broken streetlight');
     expect(report.getDescription()).toBe('The light on Rua das Flores has been out for 3 days.');
-    expect(report.getAiClassification()).toBeNull();
     expect(report.getClassificationStatus()).toBe(ClassificationStatus.PENDING);
     expect(report.getClassificationAttempts()).toBe(0);
     expect(report.getLastClassificationError()).toBeNull();
-    expect(report.getClassifiedAt()).toBeNull();
     expect(report.getCreatedAt()).toBeInstanceOf(Date);
   });
 
-  it('restores a report with AI classification and DONE status', () => {
+  it('restores a report with DONE status', () => {
     const report = Report.restore(
       {
         ...validProps(),
         createdAt: new Date('2025-01-15T10:00:00Z'),
-        aiClassification: {
-          category: 'Iluminação Pública',
-          priority: 'Alta',
-          technicalSummary: 'Poste sem funcionamento.',
-        },
         classificationStatus: ClassificationStatus.DONE,
-        classifiedAt: new Date('2025-01-15T10:01:00Z'),
       },
       'abc-123',
     );
 
     expect(report.getId()).toBe('abc-123');
     expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
-    expect(report.getAiClassification()).toEqual({
-      category: 'Iluminação Pública',
-      priority: 'Alta',
-      technicalSummary: 'Poste sem funcionamento.',
-    });
   });
 
   // ── Classification lifecycle ────────────────────────────────────────
@@ -64,11 +51,6 @@ describe('Report Entity', () => {
       {
         ...validProps(),
         classificationStatus: ClassificationStatus.DONE,
-        aiClassification: {
-          category: 'Iluminação Pública',
-          priority: 'Alta',
-          technicalSummary: 'Concluído.',
-        },
       },
       'abc-123',
     );
@@ -86,27 +68,13 @@ describe('Report Entity', () => {
     expect(report.getClassificationStatus()).toBe(ClassificationStatus.PROCESSING);
   });
 
-  it('completeClassification sets AI data, DONE status, and classifiedAt', () => {
+  it('completeClassification sets DONE status', () => {
     const report = Report.create(validProps());
     report.startClassification();
 
-    const completedAt = new Date('2026-02-27T12:00:00Z');
-    report.completeClassification(
-      {
-        category: 'Infraestrutura Urbana',
-        priority: 'Média',
-        technicalSummary: 'Degradação de superfície detectada.',
-      },
-      completedAt,
-    );
+    report.completeClassification();
 
     expect(report.getClassificationStatus()).toBe(ClassificationStatus.DONE);
-    expect(report.getClassifiedAt()).toEqual(completedAt);
-    expect(report.getAiClassification()).toEqual({
-      category: 'Infraestrutura Urbana',
-      priority: 'Média',
-      technicalSummary: 'Degradação de superfície detectada.',
-    });
   });
 
   it('failClassification records error and attempt count', () => {

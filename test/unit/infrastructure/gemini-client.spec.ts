@@ -6,6 +6,7 @@ import {
   AiInvalidJsonError,
 } from '../../../src/application/ai/errors';
 import { createMockLogger } from '../../helpers';
+import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
 
 // ---------------------------------------------------------------------------
 // Mock @google/genai — must be before import of GeminiClient in test scope

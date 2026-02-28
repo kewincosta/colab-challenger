@@ -12,9 +12,6 @@ function createMockCreateReportUseCase() {
       location: '01310-100',
       createdAt: new Date('2026-01-15T10:00:00Z'),
       classificationStatus: 'PENDING',
-      category: null,
-      priority: null,
-      technicalSummary: null,
     }),
   } as unknown as CreateReportUseCase;
 }
@@ -41,9 +38,7 @@ describe('ReportsController', () => {
     });
     expect(result.id).toBe('test-uuid');
     expect(result.title).toBe('Broken streetlight');
-    expect(result.category).toBeNull();
-    expect(result.priority).toBeNull();
-    expect(result.technicalSummary).toBeNull();
+    expect(result.classificationStatus).toBe('PENDING');
     expect(result.createdAt).toEqual(new Date('2026-01-15T10:00:00Z'));
   });
 

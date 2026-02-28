@@ -1,14 +1,19 @@
 /**
  * Mapper between AI classification result (snake_case, application boundary)
- * and domain AiClassification (camelCase, domain entity).
+ * and ClassificationResult entity props (camelCase, domain entity).
  *
  * Centralises the naming convention conversion in a single, testable function.
  */
 
 import type { AiClassificationResult } from '../types';
-import type { AiClassification } from '../../../domain/reports/entities/report.entity';
 
-export function toAiClassification(result: AiClassificationResult): AiClassification {
+export interface MappedClassification {
+  readonly category: string;
+  readonly priority: string;
+  readonly technicalSummary: string;
+}
+
+export function toMappedClassification(result: AiClassificationResult): MappedClassification {
   return {
     category: result.category,
     priority: result.priority,

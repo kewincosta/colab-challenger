@@ -22,19 +22,21 @@ import { ClassificationProcessor } from './classification.processor';
 
 import { ProcessClassificationUseCase } from '../../application/reports/use-cases/process-classification.use-case';
 import type { ReportRepository } from '../../domain/reports/repositories/report.repository';
+import type { ClassificationResultRepository } from '../../domain/reports/repositories/classification-result.repository';
 import type { ClassifyReportPort } from '../../application/ports/classify-report.port';
 import type { AppLoggerPort } from '../../application/ports/logger.port';
-import type { ClockPort } from '../../application/ports/clock.port';
 
 import { ReportOrmEntity } from '../database/typeorm/entities/report.orm-entity';
+import { ClassificationResultOrmEntity } from '../database/typeorm/entities/classification-result.orm-entity';
 import { ReportTypeOrmRepository } from '../database/typeorm/repositories/report.typeorm-repository';
+import { ClassificationResultTypeOrmRepository } from '../database/typeorm/repositories/classification-result.typeorm-repository';
 import { AiModule } from '../ai/ai.module';
 
 import {
   REPORT_REPOSITORY_TOKEN,
+  CLASSIFICATION_RESULT_REPOSITORY_TOKEN,
   APP_LOGGER_TOKEN,
   AI_ENRICHMENT_SERVICE_TOKEN,
-  CLOCK_TOKEN,
   QUEUE_PRODUCER_TOKEN,
 } from '../../shared/constants/tokens';
 
@@ -49,14 +51,10 @@ import {
         removeOnFail: false,
       },
     }),
-    TypeOrmModule.forFeature([ReportOrmEntity]),
+    TypeOrmModule.forFeature([ReportOrmEntity, ClassificationResultOrmEntity]),
     AiModule,
   ],
   providers: [
-    {
-      provide: CLOCK_TOKEN,
-      useValue: { now: () => new Date() } satisfies ClockPort,
-    },
     {
       provide: REPORT_REPOSITORY_TOKEN,
       useFactory: (repo: Repository<ReportOrmEntity>): ReportRepository =>
@@ -64,14 +62,32 @@ import {
       inject: [getRepositoryToken(ReportOrmEntity)],
     },
     {
+      provide: CLASSIFICATION_RESULT_REPOSITORY_TOKEN,
+      useFactory: (
+        repo: Repository<ClassificationResultOrmEntity>,
+      ): ClassificationResultRepository => new ClassificationResultTypeOrmRepository(repo),
+      inject: [getRepositoryToken(ClassificationResultOrmEntity)],
+    },
+    {
       provide: ProcessClassificationUseCase,
       useFactory: (
         reportRepository: ReportRepository,
+        classificationResultRepository: ClassificationResultRepository,
         classifyReport: ClassifyReportPort,
         logger: AppLoggerPort,
-        clock: ClockPort,
-      ) => new ProcessClassificationUseCase(reportRepository, classifyReport, logger, clock),
-      inject: [REPORT_REPOSITORY_TOKEN, AI_ENRICHMENT_SERVICE_TOKEN, APP_LOGGER_TOKEN, CLOCK_TOKEN],
+      ) =>
+        new ProcessClassificationUseCase(
+          reportRepository,
+          classificationResultRepository,
+          classifyReport,
+          logger,
+        ),
+      inject: [
+        REPORT_REPOSITORY_TOKEN,
+        CLASSIFICATION_RESULT_REPOSITORY_TOKEN,
+        AI_ENRICHMENT_SERVICE_TOKEN,
+        APP_LOGGER_TOKEN,
+      ],
     },
     {
       provide: QUEUE_PRODUCER_TOKEN,

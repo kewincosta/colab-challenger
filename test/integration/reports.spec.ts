@@ -99,9 +99,9 @@ describe('Reports API (integration)', () => {
     expect(response.body.title).toBe('Overflowing trash can');
     expect(response.body.description).toBe('Trash can overflowing in central park');
     expect(response.body.classificationStatus).toBe('PENDING');
-    expect(response.body.category).toBeNull();
-    expect(response.body.priority).toBeNull();
-    expect(response.body.technicalSummary).toBeNull();
+    expect(response.body).not.toHaveProperty('category');
+    expect(response.body).not.toHaveProperty('priority');
+    expect(response.body).not.toHaveProperty('technicalSummary');
     expect(mockPublishJob).toHaveBeenCalledWith({
       reportId: response.body.id,
     });

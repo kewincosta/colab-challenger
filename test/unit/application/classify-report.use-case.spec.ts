@@ -54,7 +54,7 @@ describe('ClassifyReportUseCase', () => {
     // Arrange
     const aiClient = createMockAiClient({}, VALID_JSON);
     const cache = createMockCache({
-      get: vi.fn().mockReturnValue(VALID_RESULT),
+      get: vi.fn().mockResolvedValue(VALID_RESULT),
     });
     const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
 

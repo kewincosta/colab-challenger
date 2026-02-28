@@ -12,19 +12,15 @@ function buildSavedEntity(overrides: Partial<ReportOrmEntity> = {}): ReportOrmEn
   saved.title = overrides.title ?? 'Pothole';
   saved.description = overrides.description ?? 'Deep pothole near bus stop';
   saved.location = overrides.location ?? 'Main St';
-  saved.category = overrides.category ?? null;
-  saved.priority = overrides.priority ?? null;
-  saved.technicalSummary = overrides.technicalSummary ?? null;
   saved.classificationStatus = overrides.classificationStatus ?? 'PENDING';
   saved.classificationAttempts = overrides.classificationAttempts ?? 0;
   saved.lastClassificationError = overrides.lastClassificationError ?? null;
-  saved.classifiedAt = overrides.classifiedAt ?? null;
   saved.createdAt = overrides.createdAt ?? new Date();
   return saved;
 }
 
 describe('ReportTypeOrmRepository', () => {
-  it('maps and saves a report without AI classification', async () => {
+  it('maps and saves a report with PENDING status', async () => {
     const ormRepo = {
       save: vi.fn(async (entity: ReportOrmEntity) =>
         buildSavedEntity({
@@ -48,13 +44,11 @@ describe('ReportTypeOrmRepository', () => {
     expect(saved.getId()).toBe('uuid-1');
     expect(saved.getTitle()).toBe('Pothole');
     expect(saved.getLocation().getValue()).toBe('Main St');
-    expect(saved.getAiClassification()).toBeNull();
     expect(saved.getClassificationStatus()).toBe(ClassificationStatus.PENDING);
     expect(ormRepo.save).toHaveBeenCalledOnce();
   });
 
-  it('maps and saves a report with AI classification and DONE status', async () => {
-    const classifiedAt = new Date('2026-02-27T12:00:00Z');
+  it('maps and saves a report with DONE status', async () => {
     const ormRepo = {
       save: vi.fn(async (entity: ReportOrmEntity) =>
         buildSavedEntity({
@@ -62,11 +56,7 @@ describe('ReportTypeOrmRepository', () => {
           title: entity.title,
           description: entity.description,
           location: entity.location,
-          category: entity.category,
-          priority: entity.priority,
-          technicalSummary: entity.technicalSummary,
           classificationStatus: entity.classificationStatus,
-          classifiedAt: entity.classifiedAt,
         }),
       ),
     } as unknown as Repository<ReportOrmEntity>;
@@ -80,28 +70,15 @@ describe('ReportTypeOrmRepository', () => {
     });
 
     report.startClassification();
-    report.completeClassification(
-      {
-        category: 'Iluminação Pública',
-        priority: 'Alta',
-        technicalSummary: 'Poste com defeito necessitando reparo imediato.',
-      },
-      classifiedAt,
-    );
+    report.completeClassification();
 
     const saved = await repo.save(report);
 
     expect(saved.getId()).toBe('uuid-2');
     expect(saved.getClassificationStatus()).toBe(ClassificationStatus.DONE);
-    expect(saved.getAiClassification()).toEqual({
-      category: 'Iluminação Pública',
-      priority: 'Alta',
-      technicalSummary: 'Poste com defeito necessitando reparo imediato.',
-    });
 
     const savedEntity = (ormRepo.save as ReturnType<typeof vi.fn>).mock
       .calls[0][0] as ReportOrmEntity;
-    expect(savedEntity.category).toBe('Iluminação Pública');
     expect(savedEntity.classificationStatus).toBe('DONE');
   });
 

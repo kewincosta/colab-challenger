@@ -26,21 +26,21 @@ import {
   REPORT_REPOSITORY_TOKEN,
   APP_LOGGER_TOKEN,
   AI_ENRICHMENT_SERVICE_TOKEN,
-  CLOCK_TOKEN,
+  CLASSIFICATION_RESULT_REPOSITORY_TOKEN,
 } from '../../src/shared/constants/tokens';
 
 import {
   InMemoryReportRepository,
+  InMemoryClassificationResultRepository,
   createMockLogger,
-  createFakeClock,
   createMockClassifyReport,
 } from '../helpers';
 
 // ── Mocks ─────────────────────────────────────────────────────────────
 
 const mockLogger = createMockLogger();
-const mockClock = createFakeClock();
 const inMemoryRepo = new InMemoryReportRepository();
+const inMemoryClassificationResultRepo = new InMemoryClassificationResultRepository();
 const mockClassifyReport = createMockClassifyReport();
 
 // ── Self-contained test module ────────────────────────────────────────
@@ -48,13 +48,21 @@ const mockClassifyReport = createMockClassifyReport();
 @Module({
   providers: [
     { provide: APP_LOGGER_TOKEN, useValue: mockLogger },
-    { provide: CLOCK_TOKEN, useValue: mockClock },
     { provide: REPORT_REPOSITORY_TOKEN, useValue: inMemoryRepo },
+    {
+      provide: CLASSIFICATION_RESULT_REPOSITORY_TOKEN,
+      useValue: inMemoryClassificationResultRepo,
+    },
     { provide: AI_ENRICHMENT_SERVICE_TOKEN, useValue: mockClassifyReport },
     {
       provide: ProcessClassificationUseCase,
       useFactory: () =>
-        new ProcessClassificationUseCase(inMemoryRepo, mockClassifyReport, mockLogger, mockClock),
+        new ProcessClassificationUseCase(
+          inMemoryRepo,
+          inMemoryClassificationResultRepo,
+          mockClassifyReport,
+          mockLogger,
+        ),
     },
   ],
 })
@@ -83,12 +91,6 @@ function seedDoneReport(id = 'done-1'): Report {
       description: 'This report was already classified',
       location: Location.create('Av. Paulista, 1000'),
       classificationStatus: ClassificationStatus.DONE,
-      aiClassification: {
-        category: 'Iluminação Pública',
-        priority: 'Alta',
-        technicalSummary: 'Já classificado.',
-      },
-      classifiedAt: new Date('2026-01-10T08:00:00Z'),
     },
     id,
   );
@@ -131,6 +133,7 @@ describe('Process Classification (integration)', () => {
 
   beforeEach(() => {
     inMemoryRepo.clear();
+    inMemoryClassificationResultRepo.clear();
     vi.clearAllMocks();
     // Reset the default successful response
     (mockClassifyReport.execute as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -157,12 +160,16 @@ describe('Process Classification (integration)', () => {
     const report = await inMemoryRepo.findById('report-1');
     expect(report).not.toBeNull();
     expect(report!.getClassificationStatus()).toBe(ClassificationStatus.DONE);
-    expect(report!.getAiClassification()).toEqual({
-      category: 'Iluminação Pública',
-      priority: 'Alta',
-      technicalSummary: 'Poste com defeito necessitando reparo imediato.',
-    });
-    expect(report!.getClassifiedAt()).toEqual(new Date('2026-01-15T10:00:00Z'));
+
+    // Classification result saved to separate entity
+    const classificationResult = await inMemoryClassificationResultRepo.findByReportId('report-1');
+    expect(classificationResult).not.toBeNull();
+    expect(classificationResult!.getCategory()).toBe('Iluminação Pública');
+    expect(classificationResult!.getPriority()).toBe('Alta');
+    expect(classificationResult!.getTechnicalSummary()).toBe(
+      'Poste com defeito necessitando reparo imediato.',
+    );
+
     expect(mockClassifyReport.execute).toHaveBeenCalledOnce();
     expect(mockLogger.log).toHaveBeenCalled();
   });
@@ -227,11 +234,15 @@ describe('Process Classification (integration)', () => {
     // Assert
     const report = await inMemoryRepo.findById('failed-1');
     expect(report!.getClassificationStatus()).toBe(ClassificationStatus.DONE);
-    expect(report!.getAiClassification()).toEqual({
-      category: 'Iluminação Pública',
-      priority: 'Alta',
-      technicalSummary: 'Poste com defeito necessitando reparo imediato.',
-    });
+
+    const classificationResult = await inMemoryClassificationResultRepo.findByReportId('failed-1');
+    expect(classificationResult).not.toBeNull();
+    expect(classificationResult!.getCategory()).toBe('Iluminação Pública');
+    expect(classificationResult!.getPriority()).toBe('Alta');
+    expect(classificationResult!.getTechnicalSummary()).toBe(
+      'Poste com defeito necessitando reparo imediato.',
+    );
+
     expect(mockClassifyReport.execute).toHaveBeenCalledOnce();
   });
 });

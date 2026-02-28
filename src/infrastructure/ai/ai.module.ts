@@ -1,7 +1,7 @@
 /**
  * AI Module – NestJS module wiring for AI enrichment services.
  *
- * Registers GeminiClient (as AiClientPort), MemoryLruCache (as AiCache),
+ * Registers GeminiClient (as AiClientPort), RedisCacheAdapter (as AiCache),
  * and ClassifyReportUseCase. Requires ConfigModule to be imported at the app root.
  *
  * Usage:
@@ -11,9 +11,10 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
 import { GeminiClient } from './gemini.client';
-import { MemoryLruCache } from './cache/memory-lru.cache';
+import { RedisCacheAdapter } from './cache/redis.cache';
 import { ClassifyReportUseCase } from '../../application/ai/use-cases/classify-report.use-case';
 import type { AppLoggerPort } from '../../application/ports/logger.port';
 import type { AiClientPort } from '../../application/ports/ai-client.port';
@@ -27,8 +28,8 @@ import {
   AI_ENRICHMENT_SERVICE_TOKEN,
 } from '../../shared/constants/tokens';
 
-const CACHE_MAX_SIZE = 500;
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+const CACHE_PREFIX = 'ai-cache:';
 
 @Module({
   imports: [ConfigModule],
@@ -41,8 +42,18 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
     },
     {
       provide: AI_CACHE_TOKEN,
-      useFactory: (): AiCache<AiClassificationResult> =>
-        new MemoryLruCache<AiClassificationResult>(CACHE_MAX_SIZE, CACHE_TTL_MS),
+      useFactory: (config: ConfigService<EnvConfig, true>): AiCache<AiClassificationResult> => {
+        const redis = new Redis({
+          host: config.get('REDIS_HOST', { infer: true }),
+          port: config.get('REDIS_PORT', { infer: true }),
+          maxRetriesPerRequest: null, // required by BullMQ compatibility
+        });
+        return new RedisCacheAdapter<AiClassificationResult>(redis, {
+          prefix: CACHE_PREFIX,
+          ttlSeconds: CACHE_TTL_SECONDS,
+        });
+      },
+      inject: [ConfigService],
     },
     {
       provide: AI_ENRICHMENT_SERVICE_TOKEN,

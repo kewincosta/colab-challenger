@@ -32,35 +32,11 @@ export class ReportTypeOrmRepository implements ReportRepository {
     entity.title = report.getTitle();
     entity.description = report.getDescription();
     entity.location = report.getLocationRaw();
-
-    Object.assign(entity, this.extractClassificationFields(report));
+    entity.classificationStatus = report.getClassificationStatus();
+    entity.classificationAttempts = report.getClassificationAttempts();
+    entity.lastClassificationError = report.getLastClassificationError();
 
     return entity;
-  }
-
-  private extractClassificationFields(
-    report: Report,
-  ): Pick<
-    ReportOrmEntity,
-    | 'category'
-    | 'priority'
-    | 'technicalSummary'
-    | 'classificationStatus'
-    | 'classificationAttempts'
-    | 'lastClassificationError'
-    | 'classifiedAt'
-  > {
-    const ai = report.getAiClassification();
-    const hasAi = ai !== null;
-    return {
-      category: hasAi ? ai.category : null,
-      priority: hasAi ? ai.priority : null,
-      technicalSummary: hasAi ? ai.technicalSummary : null,
-      classificationStatus: report.getClassificationStatus(),
-      classificationAttempts: report.getClassificationAttempts(),
-      lastClassificationError: report.getLastClassificationError(),
-      classifiedAt: report.getClassifiedAt(),
-    };
   }
 
   private toDomain(entity: ReportOrmEntity): Report {
@@ -72,14 +48,6 @@ export class ReportTypeOrmRepository implements ReportRepository {
         description: entity.description,
         location,
         createdAt: entity.createdAt,
-        aiClassification:
-          entity.category && entity.priority && entity.technicalSummary
-            ? {
-                category: entity.category,
-                priority: entity.priority,
-                technicalSummary: entity.technicalSummary,
-              }
-            : null,
         classificationStatus:
           entity.classificationStatus in ClassificationStatus
             ? // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- validated by `in` check above
@@ -87,7 +55,6 @@ export class ReportTypeOrmRepository implements ReportRepository {
             : ClassificationStatus.PENDING,
         classificationAttempts: entity.classificationAttempts,
         lastClassificationError: entity.lastClassificationError ?? null,
-        classifiedAt: entity.classifiedAt ?? null,
       },
       entity.id,
     );

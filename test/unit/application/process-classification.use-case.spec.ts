@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProcessClassificationUseCase } from '../../../src/application/reports/use-cases/process-classification.use-case';
 import type { ReportRepository } from '../../../src/domain/reports/repositories/report.repository';
+import type { ClassificationResultRepository } from '../../../src/domain/reports/repositories/classification-result.repository';
 import { Report } from '../../../src/domain/reports/entities/report.entity';
+import type { ClassificationResult } from '../../../src/domain/reports/entities/classification-result.entity';
 import { Location } from '../../../src/domain/reports/value-objects/location.value-object';
 import { ClassificationStatus } from '../../../src/domain/reports/value-objects/classification-status.value-object';
 import type { ClassifyReportPort } from '../../../src/application/ports/classify-report.port';
 import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
-import type { ClockPort } from '../../../src/application/ports/clock.port';
-import { createMockLogger, createFakeClock } from '../../helpers';
+import { createMockLogger, createMockClassificationResultRepository } from '../../helpers';
 
 function createPendingReport(id = 'report-1'): Report {
   return Report.restore(
@@ -24,9 +25,9 @@ function createPendingReport(id = 'report-1'): Report {
 describe('ProcessClassificationUseCase', () => {
   let savedReports: Report[];
   let repo: ReportRepository;
+  let classificationResultRepo: ClassificationResultRepository;
   let classifyReport: ClassifyReportPort;
   let logger: AppLoggerPort;
-  let clock: ClockPort;
   let useCase: ProcessClassificationUseCase;
 
   beforeEach(() => {
@@ -38,6 +39,7 @@ describe('ProcessClassificationUseCase', () => {
       }),
       findById: vi.fn(async () => createPendingReport()),
     };
+    classificationResultRepo = createMockClassificationResultRepository();
     classifyReport = {
       execute: vi.fn().mockResolvedValue({
         category: 'Iluminação Pública',
@@ -46,11 +48,15 @@ describe('ProcessClassificationUseCase', () => {
       }),
     };
     logger = createMockLogger();
-    clock = createFakeClock();
-    useCase = new ProcessClassificationUseCase(repo, classifyReport, logger, clock);
+    useCase = new ProcessClassificationUseCase(
+      repo,
+      classificationResultRepo,
+      classifyReport,
+      logger,
+    );
   });
 
-  it('classifies a PENDING report and marks it DONE', async () => {
+  it('classifies a PENDING report, saves result separately, and marks DONE', async () => {
     await useCase.execute({ reportId: 'report-1', attemptsMade: 1 });
 
     expect(classifyReport.execute).toHaveBeenCalledOnce();
@@ -59,12 +65,17 @@ describe('ProcessClassificationUseCase', () => {
 
     const lastSaved = savedReports[savedReports.length - 1];
     expect(lastSaved.getClassificationStatus()).toBe(ClassificationStatus.DONE);
-    expect(lastSaved.getAiClassification()).toEqual({
-      category: 'Iluminação Pública',
-      priority: 'Alta',
-      technicalSummary: 'Poste com defeito necessitando reparo imediato.',
-    });
-    expect(lastSaved.getClassifiedAt()).toEqual(new Date('2026-01-15T10:00:00Z'));
+
+    // ClassificationResult saved to separate repository
+    expect(classificationResultRepo.save).toHaveBeenCalledOnce();
+    const savedResult = (classificationResultRepo.save as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as ClassificationResult;
+    expect(savedResult.getReportId()).toBe('report-1');
+    expect(savedResult.getCategory()).toBe('Iluminação Pública');
+    expect(savedResult.getPriority()).toBe('Alta');
+    expect(savedResult.getTechnicalSummary()).toBe(
+      'Poste com defeito necessitando reparo imediato.',
+    );
   });
 
   it('skips classification when report is not found', async () => {
@@ -74,6 +85,7 @@ describe('ProcessClassificationUseCase', () => {
 
     expect(classifyReport.execute).not.toHaveBeenCalled();
     expect(repo.save).not.toHaveBeenCalled();
+    expect(classificationResultRepo.save).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledOnce();
   });
 
@@ -84,11 +96,6 @@ describe('ProcessClassificationUseCase', () => {
         description: 'This report was already classified',
         location: Location.create('Test'),
         classificationStatus: ClassificationStatus.DONE,
-        aiClassification: {
-          category: 'Iluminação Pública',
-          priority: 'Alta',
-          technicalSummary: 'Já classificado.',
-        },
       },
       'done-report',
     );
@@ -98,6 +105,7 @@ describe('ProcessClassificationUseCase', () => {
 
     expect(classifyReport.execute).not.toHaveBeenCalled();
     expect(repo.save).not.toHaveBeenCalled();
+    expect(classificationResultRepo.save).not.toHaveBeenCalled();
     expect(logger.log).toHaveBeenCalledOnce();
   });
 
@@ -111,6 +119,7 @@ describe('ProcessClassificationUseCase', () => {
 
     // save: PROCESSING + FAILED
     expect(repo.save).toHaveBeenCalledTimes(2);
+    expect(classificationResultRepo.save).not.toHaveBeenCalled();
 
     const lastSaved = savedReports[savedReports.length - 1];
     expect(lastSaved.getClassificationStatus()).toBe(ClassificationStatus.FAILED);
@@ -135,6 +144,7 @@ describe('ProcessClassificationUseCase', () => {
     await useCase.execute({ reportId: 'failed-report', attemptsMade: 2 });
 
     expect(classifyReport.execute).toHaveBeenCalledOnce();
+    expect(classificationResultRepo.save).toHaveBeenCalledOnce();
     const lastSaved = savedReports[savedReports.length - 1];
     expect(lastSaved.getClassificationStatus()).toBe(ClassificationStatus.DONE);
   });

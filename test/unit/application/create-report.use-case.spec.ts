@@ -27,9 +27,6 @@ describe('CreateReportUseCase', () => {
     expect(result.description).toBe('Street light not working on 5th Avenue');
     expect(result.location).toBe('5th Avenue & Pine St');
     expect(result.classificationStatus).toBe(ClassificationStatus.PENDING);
-    expect(result.category).toBeNull();
-    expect(result.priority).toBeNull();
-    expect(result.technicalSummary).toBeNull();
     expect(result.createdAt).toEqual(new Date('2026-01-15T10:00:00Z'));
     expect(repo.items).toHaveLength(1);
     expect(queueProducer.publishClassificationJob).toHaveBeenCalledWith({

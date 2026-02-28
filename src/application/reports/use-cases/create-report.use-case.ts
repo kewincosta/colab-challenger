@@ -22,9 +22,6 @@ export interface CreateReportResult {
   location: LocationRaw;
   createdAt: Date;
   classificationStatus: ClassificationStatus;
-  category: string | null;
-  priority: string | null;
-  technicalSummary: string | null;
 }
 
 export class CreateReportUseCase {
@@ -65,9 +62,6 @@ export class CreateReportUseCase {
       location: persisted.getLocationRaw(),
       createdAt: persisted.getCreatedAt(),
       classificationStatus: persisted.getClassificationStatus(),
-      category: null,
-      priority: null,
-      technicalSummary: null,
     };
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import type { AiClassificationResult, AiEnrichmentInput } from '../../src/application/ai/types';
-import type { AiClassification } from '../../src/domain/reports/entities/report.entity';
+import type { MappedClassification } from '../../src/application/ai/mappers/classification.mapper';
 
 // ── AI Enrichment input ───────────────────────────────────────────────
 
@@ -23,9 +23,9 @@ export const VALID_CLASSIFICATION_RESULT: AiClassificationResult = {
   technical_summary: 'Poste sem funcionamento reportado na Rua das Flores.',
 };
 
-// ── Domain AiClassification (camelCase — domain contract) ─────────────
+// ── Mapped Classification (camelCase — domain-ready) ──────────────────
 
-export const VALID_AI_CLASSIFICATION: AiClassification = {
+export const VALID_MAPPED_CLASSIFICATION: MappedClassification = {
   category: 'Iluminação Pública',
   priority: 'Alta',
   technicalSummary: 'Poste com defeito necessitando reparo imediato.',

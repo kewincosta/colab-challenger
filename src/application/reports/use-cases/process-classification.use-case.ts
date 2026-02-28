@@ -1,18 +1,21 @@
 /**
  * Process Classification Use Case — executed by the BullMQ worker.
  *
- * Fetches a report by ID, runs AI classification, and persists the result.
+ * Fetches a report by ID, runs AI classification, and persists the result
+ * into a separate ClassificationResult entity.
+ *
  * Designed for idempotency and retry safety:
  *   - Skips reports already in DONE status.
  *   - On failure, marks the report as FAILED and re-throws so BullMQ can retry.
  */
 
 import type { ReportRepository } from '../../../domain/reports/repositories/report.repository';
+import type { ClassificationResultRepository } from '../../../domain/reports/repositories/classification-result.repository';
+import { ClassificationResult } from '../../../domain/reports/entities/classification-result.entity';
 import { ClassificationStatus } from '../../../domain/reports/value-objects/classification-status.value-object';
 import type { ClassifyReportPort } from '../../ports/classify-report.port';
 import type { AppLoggerPort } from '../../ports/logger.port';
-import type { ClockPort } from '../../ports/clock.port';
-import { toAiClassification } from '../../ai/mappers/classification.mapper';
+import { toMappedClassification } from '../../ai/mappers/classification.mapper';
 
 export interface ProcessClassificationCommand {
   readonly reportId: string;
@@ -22,9 +25,9 @@ export interface ProcessClassificationCommand {
 export class ProcessClassificationUseCase {
   constructor(
     private readonly reportRepository: ReportRepository,
+    private readonly classificationResultRepository: ClassificationResultRepository,
     private readonly classifyReport: ClassifyReportPort,
     private readonly logger: AppLoggerPort,
-    private readonly clock: ClockPort,
   ) {}
 
   async execute(command: ProcessClassificationCommand): Promise<void> {
@@ -52,7 +55,20 @@ export class ProcessClassificationUseCase {
         location: report.getLocationRaw(),
       });
 
-      report.completeClassification(toAiClassification(result), this.clock.now());
+      const mapped = toMappedClassification(result);
+
+      // Persist classification result as a separate entity
+      await this.classificationResultRepository.save(
+        ClassificationResult.create({
+          reportId,
+          category: mapped.category,
+          priority: mapped.priority,
+          technicalSummary: mapped.technicalSummary,
+        }),
+      );
+
+      // Mark report as DONE
+      report.completeClassification();
       await this.reportRepository.save(report);
 
       this.logger.log(

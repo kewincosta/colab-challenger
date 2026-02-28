@@ -12,6 +12,7 @@ import type { QueueProducerPort } from '../../src/application/ports/queue-produc
 import type { AiClientPort } from '../../src/application/ports/ai-client.port';
 import type { AiCache } from '../../src/application/ports/ai-cache.port';
 import type { ClassifyReportPort } from '../../src/application/ports/classify-report.port';
+import type { ClassificationResultRepository } from '../../src/domain/reports/repositories/classification-result.repository';
 import type { AiClassificationResult } from '../../src/application/ai/types';
 
 // ── Logger ────────────────────────────────────────────────────────────
@@ -58,11 +59,11 @@ export function createMockCache<T = AiClassificationResult>(
   overrides: Partial<AiCache<T>> = {},
 ): AiCache<T> {
   return {
-    get: vi.fn<AiCache<T>['get']>().mockReturnValue(undefined),
-    set: vi.fn(),
-    has: vi.fn().mockReturnValue(false),
-    clear: vi.fn(),
-    size: 0,
+    get: vi.fn<AiCache<T>['get']>().mockResolvedValue(undefined),
+    set: vi.fn<AiCache<T>['set']>().mockResolvedValue(undefined),
+    has: vi.fn<AiCache<T>['has']>().mockResolvedValue(false),
+    clear: vi.fn<AiCache<T>['clear']>().mockResolvedValue(undefined),
+    getSize: vi.fn().mockResolvedValue(0),
     ...overrides,
   };
 }
@@ -78,6 +79,18 @@ export function createMockClassifyReport(
       priority: 'Alta',
       technical_summary: 'Poste com defeito necessitando reparo imediato.',
     }),
+    ...overrides,
+  };
+}
+
+// ── Classification Result Repository ──────────────────────────────────
+
+export function createMockClassificationResultRepository(
+  overrides: Partial<ClassificationResultRepository> = {},
+): ClassificationResultRepository {
+  return {
+    save: vi.fn().mockResolvedValue(undefined),
+    findByReportId: vi.fn().mockResolvedValue(null),
     ...overrides,
   };
 }

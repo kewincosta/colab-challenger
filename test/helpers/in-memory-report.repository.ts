@@ -26,11 +26,9 @@ export class InMemoryReportRepository implements ReportRepository {
         description: report.getDescription(),
         location: report.getLocation(),
         createdAt: report.getCreatedAt(),
-        aiClassification: report.getAiClassification(),
         classificationStatus: report.getClassificationStatus(),
         classificationAttempts: report.getClassificationAttempts(),
         lastClassificationError: report.getLastClassificationError(),
-        classifiedAt: report.getClassifiedAt(),
       },
       `test-uuid-${this.counter}`,
     );

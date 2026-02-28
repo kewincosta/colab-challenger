@@ -13,9 +13,9 @@
 Project layout (core parts only):
 
 - `src/domain`
-  - `reports/entities` – Domain entities such as `Report`.
-  - `reports/value-objects` – Domain value objects such as `Location`.
-  - `reports/repositories` – Repository interfaces (e.g., `ReportRepository`).
+  - `reports/entities` – Domain entities: `Report` (input + job control) and `ClassificationResult` (AI output + triage).
+  - `reports/value-objects` – Domain value objects: `Location`, `ClassificationStatus`, `TriageStatus`.
+  - `reports/repositories` – Repository interfaces (`ReportRepository`, `ClassificationResultRepository`).
 - `src/application`
   - `reports/use-cases` – Use cases such as `CreateReportUseCase` orchestrating domain logic.
   - `ai/use-cases` – AI orchestration use cases such as `ClassifyReportUseCase`.
@@ -38,8 +38,10 @@ Project layout (core parts only):
 ### Domain Layer
 
 - Contains the **core model** and business rules.
-- `Report` entity encapsulates invariants (non-empty title/description, valid location) and behavior (`updateDescription`, `moveTo`).
+- `Report` entity encapsulates invariants (non-empty title/description, valid location) and behavior (`updateDescription`, `moveTo`). It also holds **classification job control** fields (`classificationStatus`, `classificationAttempts`, `lastClassificationError`) since these describe the report's processing lifecycle.
+- `ClassificationResult` entity stores the **AI classification output** (`category`, `priority`, `technicalSummary`) as a separate, immutable record with a `triageStatus` field (defaults to `PENDING`) for future manual review workflows. It has a 1:0..1 relationship with `Report` — created only when classification succeeds.
 - `Location` value object encapsulates rules around how a location is represented (string or structured object) and ensures validity.
+- `TriageStatus` value object models the future manual triage workflow (currently only `PENDING`).
 - Domain is completely **framework-agnostic**: no NestJS decorators, no TypeORM imports, no HTTP knowledge.
 
 ### Application Layer
@@ -52,10 +54,12 @@ Project layout (core parts only):
 
 ### Infrastructure Layer
 
-- Contains all **technical details**: database access, TypeORM entities, external service adapters.
-- `ReportOrmEntity` maps the `Report` aggregate to a `reports` table using PostgreSQL types, including JSONB for location.
-- `ReportTypeOrmRepository` implements `ReportRepository` by mapping between domain objects and `ReportOrmEntity` and delegating to TypeORM.
+- Contains all **technical details**: database access, TypeORM entities, external service adapters, cache.
+- `ReportOrmEntity` maps the `Report` aggregate to a `reports` table (input data + job control fields).
+- `ClassificationResultOrmEntity` maps AI output to a `classification_results` table with a unique FK to `reports`.
+- `ReportTypeOrmRepository` and `ClassificationResultTypeOrmRepository` implement their respective repository ports.
 - `GeminiClient` implements `AiClientPort` as a pure adapter: receives ready-to-send strings (system instruction + user message) and an optional JSON schema, forwards them to the Gemini API, and returns raw text. It contains no prompt construction or business rules.
+- `RedisCacheAdapter` implements `AiCache<T>` using ioredis with JSON serialization, TTL via `SETEX`, and `ai-cache:` key prefix namespacing.
 
 ### Presentation Layer
 
@@ -88,7 +92,8 @@ The AI classification pipeline follows Clean Architecture strictly:
 - **`ClassifyReportUseCase`** (application layer) orchestrates the full flow: builds system instruction + user message, calls `AiClientPort.generate()`, validates the JSON response with Zod, and triggers repair retries when needed. It passes the JSON schema as a parameter, keeping the AI client decoupled from specific response structures.
 - **`AiClientPort`** is a minimal port with a single `generate(systemInstruction, userMessage, responseJsonSchema?)` method. It receives ready-to-send text and returns raw text — no knowledge of reports, taxonomy, or classification.
 - **`GeminiClient`** (infrastructure layer) implements `AiClientPort`. It handles only Gemini-specific concerns: SDK initialization, timeout/abort, safety filters, structured output mode. Swapping to another provider (OpenAI, Anthropic) requires only a new adapter — prompts and validation remain unchanged.
-- **`ProcessClassificationUseCase`** (application layer) consumes `ClassifyReportPort` (implemented by `ClassifyReportUseCase`) to process BullMQ jobs. It manages the report lifecycle (fetch → classify → persist) without knowledge of AI internals.
+- **`ProcessClassificationUseCase`** (application layer) consumes `ClassifyReportPort` (implemented by `ClassifyReportUseCase`) to process BullMQ jobs. It manages the report lifecycle (fetch → classify → persist result separately → mark report DONE) without knowledge of AI internals. On success, it creates a `ClassificationResult` entity and saves it via `ClassificationResultRepository`, cleanly separating input data from AI output.
+- **AI cache** uses Redis via `RedisCacheAdapter` (implementing `AiCache<T>` port) for deduplication of identical classification requests. The cache port is fully async to support both in-memory and Redis backends.
 
 ## 5. Trade-offs
 
@@ -117,14 +122,27 @@ The AI classification pipeline follows Clean Architecture strictly:
 
 ## 8. Database Design Decisions
 
-- Single table `reports` for now, modeled via `ReportOrmEntity`:
-  - `id` – UUID primary key.
-  - `title` – short textual summary.
-  - `description` – detailed description.
-  - `location` – JSONB field storing either a string or structured object.
-  - `created_at` – creation timestamp.
+- Two tables model the report + classification flow:
+  - **`reports`** — input data submitted by the citizen + classification job control:
+    - `id` – UUID primary key.
+    - `title` – short textual summary.
+    - `description` – detailed description.
+    - `location` – JSONB field storing either a string or structured object.
+    - `classification_status` – job status (`PENDING`, `PROCESSING`, `DONE`, `FAILED`).
+    - `classification_attempts` – retry counter.
+    - `last_classification_error` – last failure message (nullable).
+    - `created_at` – creation timestamp.
+  - **`classification_results`** — AI classification output (created only on success):
+    - `id` – UUID primary key.
+    - `report_id` – FK to `reports` (UNIQUE, 1:0..1 relationship).
+    - `category` – AI-assigned category.
+    - `priority` – AI-assigned priority.
+    - `technical_summary` – AI-generated summary.
+    - `triage_status` – manual review status (defaults to `PENDING` for future workflow).
+    - `created_at`, `updated_at` – timestamps.
+- This separation follows **SRP**: Report holds what the citizen submitted + processing state; ClassificationResult holds what the AI produced + future triage state.
 - **JSONB location** provides flexibility for storing coordinates, addresses, and AI-enriched geospatial metadata without schema changes.
-- In the future, normalized tables (e.g., `locations`, `triage_results`) can be introduced while keeping `Report` as the aggregate root.
+- Redis is used for AI response caching via `RedisCacheAdapter`, sharing the same Redis instance as BullMQ.
 
 ## 9. Safe Extension Guidelines
 
