@@ -8,10 +8,7 @@ interface ConfirmationSummaryProps {
   location: StructuredLocation;
 }
 
-export function ConfirmationSummary({
-  title,
-  location,
-}: ConfirmationSummaryProps) {
+export function ConfirmationSummary({ title, location }: ConfirmationSummaryProps) {
   const { t } = useI18n();
 
   const addressLine = [
@@ -28,9 +25,7 @@ export function ConfirmationSummary({
   return (
     <Card>
       <CardContent className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">
-          {t('confirmation.summaryTitle')}
-        </h3>
+        <h3 className="text-lg font-semibold text-foreground">{t('confirmation.summaryTitle')}</h3>
 
         <div className="space-y-3">
           <div>
@@ -56,7 +51,7 @@ export function ConfirmationSummary({
                 {t('confirmation.cep')}
               </label>
               <p className="text-base text-foreground mt-1 font-mono">
-                {location.postcode.replace(/^(\d{5})(\d{3})$/, '$1-$2')}
+                {location.postcode.replace(/^(?<prefix>\d{5})(?<suffix>\d{3})$/, '$1-$2')}
               </p>
             </div>
           )}

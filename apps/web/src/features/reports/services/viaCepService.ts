@@ -20,18 +20,18 @@ export interface ViaCepErrorResponse {
 export type ViaCepResponse = ViaCepSuccessResponse | ViaCepErrorResponse;
 
 export function isViaCepError(response: ViaCepResponse): response is ViaCepErrorResponse {
-  return 'erro' in response && response.erro === true;
+  return 'erro' in response && response.erro;
 }
 
 export async function lookupCep(cep: string): Promise<ViaCepResponse> {
   const normalizedCep = cep.replace(/\D/g, '');
-  
+
   if (normalizedCep.length !== 8) {
     throw new Error('CEP must contain exactly 8 digits');
   }
 
   const response = await axios.get<ViaCepResponse>(
-    `https://viacep.com.br/ws/${normalizedCep}/json/`
+    `https://viacep.com.br/ws/${normalizedCep}/json/`,
   );
 
   return response.data;

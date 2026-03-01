@@ -15,7 +15,8 @@ export const translations = {
     hero: {
       title: 'Relate um problema na sua cidade',
       subtitle: 'Sua voz ajuda o município a identificar e priorizar melhorias com mais agilidade.',
-      description: 'Este serviço conecta você à equipe responsável pela manutenção urbana. Se você encontrou um problema no seu bairro, registre sua solicitação — sua participação ajuda a construir uma cidade melhor para todos.',
+      description:
+        'Este serviço conecta você à equipe responsável pela manutenção urbana. Se você encontrou um problema no seu bairro, registre sua solicitação — sua participação ajuda a construir uma cidade melhor para todos.',
     },
     benefits: {
       title: 'Como funciona',
@@ -41,7 +42,8 @@ export const translations = {
       titleLabel: 'Título',
       titlePlaceholder: 'Ex: Buraco na calçada da Rua Principal',
       descriptionLabel: 'Descrição do problema',
-      descriptionPlaceholder: 'Descreva o problema com detalhes para ajudar a equipe a entender a situação...',
+      descriptionPlaceholder:
+        'Descreva o problema com detalhes para ajudar a equipe a entender a situação...',
       cepLabel: 'CEP',
       cepHelper: 'Digite o CEP para preencher o endereço automaticamente, ou preencha manualmente.',
       cepPlaceholder: '00000-000',
@@ -63,9 +65,11 @@ export const translations = {
       submitting: 'Enviando...',
       lookingUpCep: 'Buscando endereço...',
       cepNotFound: 'CEP não encontrado',
-      cepNotFoundMessage: 'Não encontramos o endereço para este CEP. Por favor, preencha os dados manualmente.',
+      cepNotFoundMessage:
+        'Não encontramos o endereço para este CEP. Por favor, preencha os dados manualmente.',
       cepNetworkError: 'Erro ao buscar CEP',
-      cepNetworkErrorMessage: 'Não foi possível buscar o endereço. Verifique sua conexão e tente novamente, ou preencha manualmente.',
+      cepNetworkErrorMessage:
+        'Não foi possível buscar o endereço. Verifique sua conexão e tente novamente, ou preencha manualmente.',
     },
     validation: {
       titleRequired: 'O título é obrigatório',
@@ -79,16 +83,17 @@ export const translations = {
       neighborhoodRequired: 'O bairro é obrigatório',
       cityRequired: 'A cidade é obrigatória',
       stateRequired: 'O estado é obrigatório',
-
     },
     errors: {
       submissionFailed: 'Erro ao enviar solicitação',
-      submissionFailedMessage: 'Não foi possível enviar sua solicitação. Por favor, tente novamente.',
+      submissionFailedMessage:
+        'Não foi possível enviar sua solicitação. Por favor, tente novamente.',
       tryAgain: 'Tentar novamente',
     },
     confirmation: {
       title: 'Recebemos sua solicitação!',
-      message: 'Obrigado por contribuir com a melhoria da nossa cidade. Sua solicitação foi registrada e será encaminhada para análise.',
+      message:
+        'Obrigado por contribuir com a melhoria da nossa cidade. Sua solicitação foi registrada e será encaminhada para análise.',
       summaryTitle: 'Resumo da solicitação',
       reportTitle: 'Título',
       locationMethod: 'Método de localização',
@@ -112,8 +117,10 @@ export const translations = {
     },
     hero: {
       title: 'Report an issue in your city',
-      subtitle: 'Your voice helps the municipality identify and prioritize improvements more quickly.',
-      description: 'This service connects you to the team responsible for urban maintenance. If you found a problem in your neighborhood, submit your report — your participation helps build a better city for everyone.',
+      subtitle:
+        'Your voice helps the municipality identify and prioritize improvements more quickly.',
+      description:
+        'This service connects you to the team responsible for urban maintenance. If you found a problem in your neighborhood, submit your report — your participation helps build a better city for everyone.',
     },
     benefits: {
       title: 'How it works',
@@ -139,7 +146,8 @@ export const translations = {
       titleLabel: 'Title',
       titlePlaceholder: 'E.g., Pothole on Main Street sidewalk',
       descriptionLabel: 'Problem description',
-      descriptionPlaceholder: 'Describe the problem in detail to help the team understand the situation...',
+      descriptionPlaceholder:
+        'Describe the problem in detail to help the team understand the situation...',
       cepLabel: 'Postal Code',
       cepHelper: 'Enter the postal code to auto-fill the address, or fill in manually.',
       cepPlaceholder: '00000-000',
@@ -161,9 +169,11 @@ export const translations = {
       submitting: 'Submitting...',
       lookingUpCep: 'Looking up address...',
       cepNotFound: 'Postal code not found',
-      cepNotFoundMessage: 'We could not find the address for this postal code. Please fill in the address manually.',
+      cepNotFoundMessage:
+        'We could not find the address for this postal code. Please fill in the address manually.',
       cepNetworkError: 'Error looking up postal code',
-      cepNetworkErrorMessage: 'Unable to look up the address. Check your connection and try again, or fill in manually.',
+      cepNetworkErrorMessage:
+        'Unable to look up the address. Check your connection and try again, or fill in manually.',
     },
     validation: {
       titleRequired: 'Title is required',
@@ -177,7 +187,6 @@ export const translations = {
       neighborhoodRequired: 'Neighborhood is required',
       cityRequired: 'City is required',
       stateRequired: 'State is required',
-
     },
     errors: {
       submissionFailed: 'Submission failed',
@@ -186,7 +195,8 @@ export const translations = {
     },
     confirmation: {
       title: 'We received your report!',
-      message: 'Thank you for contributing to the improvement of our city. Your report has been registered and will be forwarded for analysis.',
+      message:
+        'Thank you for contributing to the improvement of our city. Your report has been registered and will be forwarded for analysis.',
       summaryTitle: 'Report summary',
       reportTitle: 'Title',
       locationMethod: 'Location method',

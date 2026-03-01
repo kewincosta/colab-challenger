@@ -1,5 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { lookupCep, ViaCepResponse, isViaCepError, ViaCepSuccessResponse } from '../services/viaCepService';
+import {
+  lookupCep,
+  type ViaCepResponse,
+  isViaCepError,
+  type ViaCepSuccessResponse,
+} from '../services/viaCepService';
 
 export interface CepLookupState {
   data: ViaCepSuccessResponse | null;
@@ -21,22 +26,23 @@ export function useCepLookup(): UseCepLookupReturn {
   const debounceTimerRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-    };
-  }, []);
+    },
+    [],
+  );
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  const lookup = useCallback((cep: string) => {
+  const lookup = useCallback(async (cep: string) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -46,10 +52,10 @@ export function useCepLookup(): UseCepLookupReturn {
     if (normalizedCep.length !== 8) {
       setData(null);
       setError(null);
-      return Promise.resolve();
+      return await Promise.resolve();
     }
 
-    return new Promise<void>((resolve) => {
+    return await new Promise<void>((resolve) => {
       debounceTimerRef.current = window.setTimeout(async () => {
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
@@ -62,7 +68,7 @@ export function useCepLookup(): UseCepLookupReturn {
 
         try {
           const response: ViaCepResponse = await lookupCep(normalizedCep);
-          await new Promise((r) => setTimeout(r, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
 
           if (isViaCepError(response)) {
             setData(null);
@@ -71,7 +77,7 @@ export function useCepLookup(): UseCepLookupReturn {
             setData(response);
             setError(null);
           }
-        } catch (err) {
+        } catch {
           setData(null);
           setError('NETWORK_ERROR');
         } finally {

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { translations, Language } from './translations';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { translations, type Language } from './translations';
 
 type TranslationValue = string | { [key: string]: string | TranslationValue };
 
@@ -13,7 +13,7 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'municipal-service-lang';
 
-function getNestedValue(obj: { [key: string]: string | TranslationValue }, path: string): string {
+function getNestedValue(obj: Record<string, string | TranslationValue>, path: string): string {
   const keys = path.split('.');
   let current: string | TranslationValue = obj;
 
@@ -31,7 +31,7 @@ function getNestedValue(obj: { [key: string]: string | TranslationValue }, path:
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Language>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return (stored === 'ptBR' || stored === 'enUS') ? stored : 'ptBR';
+    return stored === 'ptBR' || stored === 'enUS' ? stored : 'ptBR';
   });
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [lang]);
 
   const t = (key: string): string => {
-    const translationObj = translations[lang] as { [key: string]: string | TranslationValue };
+    const translationObj = translations[lang] as Record<string, string | TranslationValue>;
     return getNestedValue(translationObj, key);
   };
 
@@ -49,11 +49,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const value: I18nContextType = { lang, setLang, t };
 
-  return (
-    <I18nContext.Provider value={value}>
-      {children}
-    </I18nContext.Provider>
-  );
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
 export function useI18n() {

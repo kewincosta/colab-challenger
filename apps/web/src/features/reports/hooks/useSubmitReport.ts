@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { reportService } from '../services/reportsService';
-import { CreateReportPayload, ReportResponse } from '../types/reportTypes';
+import type { CreateReportPayload, ReportResponse } from '../types/reportTypes';
 
 interface UseSubmitReportReturn {
   submit: (payload: CreateReportPayload) => Promise<ReportResponse | null>;
@@ -19,10 +19,10 @@ export function useSubmitReport(): UseSubmitReportReturn {
 
     try {
       const response = await reportService.createReport(payload);
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return response;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+    } catch (_err) {
+      setError(_err instanceof Error ? _err.message : 'Unknown error');
       return null;
     } finally {
       setIsLoading(false);

@@ -1,6 +1,6 @@
 import { GlobeIcon } from '@phosphor-icons/react';
 import { useI18n } from '@/shared/i18n/useI18n';
-import { Language } from '@/shared/i18n/translations';
+import type { Language } from '@/shared/i18n/translations';
 import {
   Select,
   SelectContent,
@@ -16,10 +16,7 @@ export function LanguageSwitcher() {
     <div className="flex items-center gap-2">
       <GlobeIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
       <Select value={lang} onValueChange={(value) => setLang(value as Language)}>
-        <SelectTrigger
-          className="w-auto min-w-[120px]"
-          aria-label={t('header.selectLanguage')}
-        >
+        <SelectTrigger className="w-auto min-w-[120px]" aria-label={t('header.selectLanguage')}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

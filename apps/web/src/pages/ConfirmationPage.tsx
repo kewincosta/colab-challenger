@@ -16,14 +16,14 @@ export function ConfirmationPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const routerState = useRouterState();
-  
-  const state = (routerState.location.state as unknown) as ConfirmationState | undefined;
+
+  const state = routerState.location.state as unknown as ConfirmationState | undefined;
 
   const handleBackToHome = () => {
-    navigate({ to: '/' });
+    void navigate({ to: '/' });
   };
 
-  if (!state || !state.reportId) {
+  if (!state?.reportId) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -43,7 +43,10 @@ export function ConfirmationPage() {
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-950 flex items-center justify-center">
-              <CheckCircleIcon className="h-10 w-10 text-green-600 dark:text-green-400" weight="fill" />
+              <CheckCircleIcon
+                className="h-10 w-10 text-green-600 dark:text-green-400"
+                weight="fill"
+              />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
               {t('confirmation.title')}
@@ -53,10 +56,7 @@ export function ConfirmationPage() {
             </p>
           </div>
 
-          <ConfirmationSummary
-            title={state.title}
-            location={state.location}
-          />
+          <ConfirmationSummary title={state.title} location={state.location} />
 
           <div className="flex justify-center">
             <Button onClick={handleBackToHome} size="default" variant="default">

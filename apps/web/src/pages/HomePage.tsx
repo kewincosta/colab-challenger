@@ -21,9 +21,7 @@ export function HomePage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <BuildingsIcon className="h-8 w-8 text-primary" weight="fill" />
-              <h1 className="text-xl font-bold text-foreground">
-                {t('header.siteName')}
-              </h1>
+              <h1 className="text-xl font-bold text-foreground">{t('header.siteName')}</h1>
             </div>
             <div className="flex flex-row items-center gap-3">
               <LanguageSwitcher />
@@ -50,12 +48,13 @@ export function HomePage() {
           </section>
 
           <section className="space-y-6">
-            <h3 className="text-2xl font-semibold text-foreground">
-              {t('benefits.title')}
-            </h3>
+            <h3 className="text-2xl font-semibold text-foreground">{t('benefits.title')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30">
-                <ClipboardTextIcon className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" weight="fill" />
+                <ClipboardTextIcon
+                  className="h-6 w-6 text-primary flex-shrink-0 mt-0.5"
+                  weight="fill"
+                />
                 <div>
                   <h4 className="font-semibold text-foreground mb-1">
                     {t('benefits.simple.title')}
@@ -79,7 +78,10 @@ export function HomePage() {
               </div>
 
               <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30">
-                <LightningIcon className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" weight="fill" />
+                <LightningIcon
+                  className="h-6 w-6 text-primary flex-shrink-0 mt-0.5"
+                  weight="fill"
+                />
                 <div>
                   <h4 className="font-semibold text-foreground mb-1">
                     {t('benefits.routing.title')}
@@ -91,23 +93,22 @@ export function HomePage() {
               </div>
 
               <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30">
-                <UsersFourIcon className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" weight="fill" />
+                <UsersFourIcon
+                  className="h-6 w-6 text-primary flex-shrink-0 mt-0.5"
+                  weight="fill"
+                />
                 <div>
                   <h4 className="font-semibold text-foreground mb-1">
                     {t('benefits.civic.title')}
                   </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t('benefits.civic.description')}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t('benefits.civic.description')}</p>
                 </div>
               </div>
             </div>
           </section>
 
           <section className="space-y-6">
-            <h3 className="text-2xl font-semibold text-foreground">
-              {t('form.sectionTitle')}
-            </h3>
+            <h3 className="text-2xl font-semibold text-foreground">{t('form.sectionTitle')}</h3>
             <Card>
               <CardContent>
                 <ReportForm />

@@ -8,9 +8,7 @@ export function ThemeSwitcher() {
   const { t } = useI18n();
 
   const isDark = theme === 'dark';
-  const ariaLabel = isDark 
-    ? t('header.switchToLight') 
-    : t('header.switchToDark');
+  const ariaLabel = isDark ? t('header.switchToLight') : t('header.switchToDark');
 
   return (
     <Button

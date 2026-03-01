@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { StructuredLocation } from '../types/reportTypes';
+import type { StructuredLocation } from '../types/reportTypes';
 import { useSubmitReport } from '../hooks/useSubmitReport';
 import { useCepLookup } from '../hooks/useCepLookup';
 import { useI18n } from '@/shared/i18n/useI18n';
@@ -20,10 +20,8 @@ function formatCep(value: string): string {
 
 function requiredValidator(msg: string) {
   return {
-    onBlur: ({ value }: { value: string }) =>
-      !value || value.trim() === '' ? msg : undefined,
-    onChange: ({ value }: { value: string }) =>
-      value && value.trim() !== '' ? undefined : msg,
+    onBlur: ({ value }: { value: string }) => (!value || value.trim() === '' ? msg : undefined),
+    onChange: ({ value }: { value: string }) => (value && value.trim() !== '' ? undefined : msg),
   };
 }
 
@@ -63,7 +61,13 @@ export function ReportForm() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { submit, isLoading, error, clearError } = useSubmitReport();
-  const { data: cepData, isLookingUp, error: cepError, lookup, clearError: clearCepError } = useCepLookup();
+  const {
+    data: cepData,
+    isLookingUp,
+    error: cepError,
+    lookup,
+    clearError: clearCepError,
+  } = useCepLookup();
 
   useEffect(() => {
     if (error) {
@@ -81,7 +85,10 @@ export function ReportForm() {
       toast({
         variant: 'warning',
         title: cepError === 'CEP_NOT_FOUND' ? t('form.cepNotFound') : t('form.cepNetworkError'),
-        description: cepError === 'CEP_NOT_FOUND' ? t('form.cepNotFoundMessage') : t('form.cepNetworkErrorMessage'),
+        description:
+          cepError === 'CEP_NOT_FOUND'
+            ? t('form.cepNotFoundMessage')
+            : t('form.cepNetworkErrorMessage'),
         duration: 6000,
       });
     }
@@ -120,14 +127,14 @@ export function ReportForm() {
       });
 
       if (response) {
-        navigate({
+        void navigate({
           to: '/confirmation',
           state: {
             reportId: response.id,
             title: response.title,
             location,
             classificationStatus: response.classificationStatus,
-          } as Record<string, unknown>,
+          } satisfies Record<string, unknown>,
         });
       }
     },
@@ -154,13 +161,17 @@ export function ReportForm() {
       onSubmit={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        form.handleSubmit();
+        void form.handleSubmit();
       }}
       className="space-y-6"
     >
       <form.Field
         name="title"
-        validators={minLengthValidator(5, t('validation.titleRequired'), t('validation.titleMinLength'))}
+        validators={minLengthValidator(
+          5,
+          t('validation.titleRequired'),
+          t('validation.titleMinLength'),
+        )}
       >
         {(field) => {
           const showError = field.state.meta.isTouched && field.state.meta.errors.length > 0;
@@ -177,10 +188,7 @@ export function ReportForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 placeholder={t('form.titlePlaceholder')}
-                className={cn(
-                  'h-10 px-4',
-                  showError && 'border-destructive'
-                )}
+                className={cn('h-10 px-4', showError && 'border-destructive')}
               />
             </FormField>
           );
@@ -189,7 +197,11 @@ export function ReportForm() {
 
       <form.Field
         name="description"
-        validators={minLengthValidator(15, t('validation.descriptionRequired'), t('validation.descriptionMinLength'))}
+        validators={minLengthValidator(
+          15,
+          t('validation.descriptionRequired'),
+          t('validation.descriptionMinLength'),
+        )}
       >
         {(field) => {
           const showError = field.state.meta.isTouched && field.state.meta.errors.length > 0;
@@ -210,7 +222,7 @@ export function ReportForm() {
                   'placeholder:text-muted-foreground border-input dark:bg-input/30 w-full rounded-md border bg-transparent px-4 py-2 text-base shadow-xs outline-none transition-[color,box-shadow] md:text-sm',
                   'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
                   'resize-none',
-                  showError && 'border-destructive'
+                  showError && 'border-destructive',
                 )}
               />
             </FormField>
@@ -219,52 +231,43 @@ export function ReportForm() {
       </form.Field>
 
       <div className="space-y-4">
-        <form.Field
-          name="cep"
-          validators={cepValidator(t('validation.cepInvalid'))}
-        >
+        <form.Field name="cep" validators={cepValidator(t('validation.cepInvalid'))}>
           {(field) => {
             const showError = field.state.meta.isTouched && field.state.meta.errors.length > 0;
             return (
-            <FormField
-              label={t('form.cepLabel')}
-              error={showError ? [...new Set(field.state.meta.errors)].join(', ') : undefined}
-              helper={t('form.cepHelper')}
-            >
-              <div className="relative">
-                <Input
-                  id="cep"
-                  type="text"
-                  value={field.state.value || ''}
-                  onChange={(e) => {
-                    const masked = formatCep(e.target.value);
-                    field.handleChange(masked);
-                    handleCepChange(masked);
-                  }}
-                  onBlur={field.handleBlur}
-                  placeholder="00000-000"
-                  maxLength={9}
-                  className={cn(
-                    'h-10 px-4',
-                    showError && 'border-destructive'
+              <FormField
+                label={t('form.cepLabel')}
+                error={showError ? [...new Set(field.state.meta.errors)].join(', ') : undefined}
+                helper={t('form.cepHelper')}
+              >
+                <div className="relative">
+                  <Input
+                    id="cep"
+                    type="text"
+                    value={field.state.value || ''}
+                    onChange={(e) => {
+                      const masked = formatCep(e.target.value);
+                      field.handleChange(masked);
+                      void handleCepChange(masked);
+                    }}
+                    onBlur={field.handleBlur}
+                    placeholder="00000-000"
+                    maxLength={9}
+                    className={cn('h-10 px-4', showError && 'border-destructive')}
+                  />
+                  {isLookingUp && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <CircleNotchIcon className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
                   )}
-                />
-                {isLookingUp && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <CircleNotchIcon className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-            </FormField>
+                </div>
+              </FormField>
             );
           }}
         </form.Field>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <form.Field
-            name="street"
-            validators={requiredValidator(t('validation.streetRequired'))}
-          >
+          <form.Field name="street" validators={requiredValidator(t('validation.streetRequired'))}>
             {(field) => {
               const showError = field.state.meta.isTouched && field.state.meta.errors.length > 0;
               return (
@@ -281,10 +284,7 @@ export function ReportForm() {
                     onBlur={field.handleBlur}
                     placeholder={t('form.streetPlaceholder')}
                     disabled={isLookingUp}
-                    className={cn(
-                      'h-10 px-4',
-                      showError && 'border-destructive'
-                    )}
+                    className={cn('h-10 px-4', showError && 'border-destructive')}
                   />
                 </FormField>
               );
@@ -293,9 +293,7 @@ export function ReportForm() {
 
           <form.Field name="number">
             {(field) => (
-              <FormField
-                label={t('form.numberLabel')}
-              >
+              <FormField label={t('form.numberLabel')}>
                 <Input
                   id="number"
                   type="text"
@@ -347,20 +345,14 @@ export function ReportForm() {
                     onBlur={field.handleBlur}
                     placeholder={t('form.neighborhoodPlaceholder')}
                     disabled={isLookingUp}
-                    className={cn(
-                      'h-10 px-4',
-                      showError && 'border-destructive'
-                    )}
+                    className={cn('h-10 px-4', showError && 'border-destructive')}
                   />
                 </FormField>
               );
             }}
           </form.Field>
 
-          <form.Field
-            name="city"
-            validators={requiredValidator(t('validation.cityRequired'))}
-          >
+          <form.Field name="city" validators={requiredValidator(t('validation.cityRequired'))}>
             {(field) => {
               const showError = field.state.meta.isTouched && field.state.meta.errors.length > 0;
               return (
@@ -377,10 +369,7 @@ export function ReportForm() {
                     onBlur={field.handleBlur}
                     placeholder={t('form.cityPlaceholder')}
                     disabled={isLookingUp}
-                    className={cn(
-                      'h-10 px-4',
-                      showError && 'border-destructive'
-                    )}
+                    className={cn('h-10 px-4', showError && 'border-destructive')}
                   />
                 </FormField>
               );
@@ -388,10 +377,7 @@ export function ReportForm() {
           </form.Field>
         </div>
 
-        <form.Field
-          name="state"
-          validators={requiredValidator(t('validation.stateRequired'))}
-        >
+        <form.Field name="state" validators={requiredValidator(t('validation.stateRequired'))}>
           {(field) => {
             const showError = field.state.meta.isTouched && field.state.meta.errors.length > 0;
             return (
@@ -409,10 +395,7 @@ export function ReportForm() {
                   placeholder={t('form.statePlaceholder')}
                   maxLength={2}
                   disabled={isLookingUp}
-                  className={cn(
-                    'h-10 px-4 uppercase',
-                    showError && 'border-destructive'
-                  )}
+                  className={cn('h-10 px-4 uppercase', showError && 'border-destructive')}
                 />
               </FormField>
             );
