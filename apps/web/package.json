@@ -1,0 +1,52 @@
+{
+    "name": "@colab-challenger/web",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "kill": "fuser -k 5000/tcp",
+        "build": "tsc -b --noCheck && vite build",
+        "lint": "eslint .",
+        "optimize": "vite optimize",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@phosphor-icons/react": "^2.1.7",
+        "@radix-ui/colors": "^3.0.0",
+        "@radix-ui/react-label": "^2.1.2",
+        "@radix-ui/react-select": "^2.2.6",
+        "@radix-ui/react-slot": "^1.1.2",
+        "@radix-ui/react-toast": "^1.2.15",
+        "@tailwindcss/vite": "^4.1.11",
+        "@tanstack/react-form": "^1.28.3",
+        "@tanstack/react-query": "^5.83.1",
+        "@tanstack/react-router": "^1.163.2",
+        "axios": "^1.13.5",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "date-fns": "^3.6.0",
+        "framer-motion": "^12.6.2",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "react-error-boundary": "^6.0.0",
+        "tailwind-merge": "^3.0.2",
+        "tw-animate-css": "^1.2.4",
+        "zod": "^3.25.76"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.21.0",
+        "@tailwindcss/postcss": "^4.1.8",
+        "@types/react": "^19.0.10",
+        "@types/react-dom": "^19.0.4",
+        "@vitejs/plugin-react-swc": "^4.2.2",
+        "eslint": "^9.28.0",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "eslint-plugin-react-refresh": "^0.4.19",
+        "globals": "^16.0.0",
+        "tailwindcss": "^4.1.11",
+        "typescript": "~5.7.2",
+        "typescript-eslint": "^8.38.0",
+        "vite": "^7.2.6"
+    }
+}

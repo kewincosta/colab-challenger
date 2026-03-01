@@ -22,7 +22,9 @@ services:
       - redis_data:/data
 
   app:
-    build: .
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
     container_name: urban_triage_app
     restart: unless-stopped
     env_file:
