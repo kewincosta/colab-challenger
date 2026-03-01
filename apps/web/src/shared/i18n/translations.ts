@@ -86,8 +86,7 @@ export const translations = {
     },
     errors: {
       submissionFailed: 'Erro ao enviar relato',
-      submissionFailedMessage:
-        'Não foi possível enviar seu relato. Por favor, tente novamente.',
+      submissionFailedMessage: 'Não foi possível enviar seu relato. Por favor, tente novamente.',
       tryAgain: 'Tentar novamente',
     },
     confirmation: {

@@ -7,6 +7,7 @@ import {
   AiSafetyBlockedError,
   AiInvalidJsonError,
   AiValidationError,
+  AiMaxTokensError,
 } from '../../../src/application/ai/errors';
 import {
   createMockLogger,
@@ -186,5 +187,60 @@ describe('ClassifyReportUseCase', () => {
 
     // Act & Assert
     await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiTimeoutError);
+  });
+
+  it('retries with repair when response is truncated JSON (not treated as safety block)', async () => {
+    // Arrange — simulate Gemini returning truncated JSON (e.g. mid-generation cut)
+    const truncatedJson =
+      '{"category":"Iluminação Pública","priority":"Alta","technical_summary":"Poste com';
+    const aiClient = createMockAiClient({
+      generate: vi
+        .fn<AiClientPort['generate']>()
+        .mockResolvedValueOnce(truncatedJson)
+        .mockResolvedValueOnce(VALID_JSON),
+    });
+    const cache = createMockCache();
+    const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
+
+    // Act — truncated JSON should trigger repair retry, NOT safety block
+    const result = await useCase.execute(VALID_INPUT);
+
+    // Assert — repair succeeds
+    expect(result).toEqual(VALID_RESULT);
+    expect(aiClient.generate).toHaveBeenCalledTimes(2);
+    expect(cache.set).toHaveBeenCalledOnce();
+  });
+
+  it('throws AiInvalidJsonError when both attempts return truncated JSON', async () => {
+    // Arrange — both calls return unparseable truncated JSON
+    const truncated1 =
+      '{"category":"Iluminação Pública","priority":"Alta","technical_summary":"Poste com';
+    const truncated2 =
+      '{"category":"Infraestrutura Urbana","priority":"Média","technical_summary":"Bura';
+    const aiClient = createMockAiClient({
+      generate: vi
+        .fn<AiClientPort['generate']>()
+        .mockResolvedValueOnce(truncated1)
+        .mockResolvedValueOnce(truncated2),
+    });
+    const cache = createMockCache();
+    const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
+
+    // Act & Assert — should throw parse error, NOT safety block
+    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiInvalidJsonError);
+    expect(cache.set).not.toHaveBeenCalled();
+  });
+
+  it('propagates AiMaxTokensError from generate call', async () => {
+    // Arrange
+    const aiClient = createMockAiClient({
+      generate: vi.fn<AiClientPort['generate']>().mockRejectedValue(new AiMaxTokensError(80)),
+    });
+    const cache = createMockCache();
+    const useCase = new ClassifyReportUseCase(aiClient, cache, logger);
+
+    // Act & Assert
+    await expect(useCase.execute(VALID_INPUT)).rejects.toBeInstanceOf(AiMaxTokensError);
+    expect(logger.warn).toHaveBeenCalled();
   });
 });

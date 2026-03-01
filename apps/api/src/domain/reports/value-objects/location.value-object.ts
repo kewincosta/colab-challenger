@@ -6,7 +6,7 @@ import { InvalidLocationException } from '../exceptions/invalid-location.excepti
  */
 export interface StructuredLocation {
   street: string;
-  number: string;
+  number?: string;
   complement?: string;
   neighborhood: string;
   city: string;
@@ -14,42 +14,41 @@ export interface StructuredLocation {
   postcode: string;
 }
 
-const REQUIRED_KEYS: (keyof StructuredLocation)[] = [
+const REQUIRED_KEYS: Array<keyof StructuredLocation> = [
   'street',
-  'number',
   'neighborhood',
   'city',
   'state',
   'postcode',
 ];
 
+/**
+ * Return trimmed string if truthy, undefined otherwise.
+ */
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
 export class Location {
   private constructor(private readonly value: StructuredLocation) {}
 
   static create(raw: unknown): Location {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-      throw new InvalidLocationException(
-        'location must be a structured address object',
-      );
+      throw new InvalidLocationException('location must be a structured address object');
     }
 
     const obj = raw as Record<string, unknown>;
 
     for (const key of REQUIRED_KEYS) {
-      if (typeof obj[key] !== 'string' || (obj[key] as string).trim() === '') {
-        throw new InvalidLocationException(
-          `location.${key} must be a non-empty string`,
-        );
+      if (typeof obj[key] !== 'string' || obj[key].trim() === '') {
+        throw new InvalidLocationException(`location.${key} must be a non-empty string`);
       }
     }
 
     return new Location({
       street: (obj.street as string).trim(),
-      number: (obj.number as string).trim(),
-      complement:
-        typeof obj.complement === 'string' && obj.complement.trim()
-          ? obj.complement.trim()
-          : undefined,
+      number: optionalString(obj.number),
+      complement: optionalString(obj.complement),
       neighborhood: (obj.neighborhood as string).trim(),
       city: (obj.city as string).trim(),
       state: (obj.state as string).trim(),

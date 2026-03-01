@@ -6,7 +6,8 @@
  *
  * Designed for idempotency and retry safety:
  *   - Skips reports already in DONE status.
- *   - On failure, marks the report as FAILED and re-throws so BullMQ can retry.
+ *   - On safety block, marks FAILED and does NOT re-throw (retrying won't help).
+ *   - On other failures, marks FAILED and re-throws so BullMQ can retry.
  */
 
 import type { ReportRepository } from '../../../domain/reports/repositories/report.repository';
@@ -16,6 +17,7 @@ import { ClassificationStatus } from '../../../domain/reports/value-objects/clas
 import type { ClassifyReportPort } from '../../ports/classify-report.port';
 import type { AppLoggerPort } from '../../ports/logger.port';
 import { toMappedClassification } from '../../ai/mappers/classification.mapper';
+import { AiSafetyBlockedError } from '../../ai/errors';
 
 export interface ProcessClassificationCommand {
   readonly reportId: string;
@@ -52,7 +54,7 @@ export class ProcessClassificationUseCase {
       const result = await this.classifyReport.execute({
         title: report.getTitle(),
         description: report.getDescription(),
-        location: report.getLocationRaw() as Record<string, unknown>,
+        location: report.getLocationRaw() as unknown as Record<string, unknown>,
       });
 
       const mapped = toMappedClassification(result);
@@ -83,6 +85,15 @@ export class ProcessClassificationUseCase {
       this.logger.error(
         `[ProcessClassification] Report ${reportId} classification failed (attempt ${attemptsMade}): ${message}`,
       );
+
+      // Safety blocks are deterministic — retrying with the same content
+      // will always fail. Mark as FAILED and do NOT re-throw.
+      if (error instanceof AiSafetyBlockedError) {
+        this.logger.warn(
+          `[ProcessClassification] Report ${reportId} blocked by safety filter, will not retry`,
+        );
+        return;
+      }
 
       // Re-throw so BullMQ triggers retry with backoff
       throw error;

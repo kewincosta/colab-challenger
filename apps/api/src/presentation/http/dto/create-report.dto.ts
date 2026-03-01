@@ -13,14 +13,14 @@ export class StructuredLocationDto {
   @IsNotEmpty()
   street!: string;
 
-  @ApiProperty({
-    description: 'Street number',
+  @ApiPropertyOptional({
+    description: 'Street number (optional — some locations have no number)',
     example: '123',
-    minLength: 1,
+    nullable: true,
   })
   @IsString()
-  @IsNotEmpty()
-  number!: string;
+  @IsOptional()
+  number?: string;
 
   @ApiPropertyOptional({
     description: 'Address complement (apartment, block, etc.)',
@@ -82,7 +82,8 @@ export class CreateReportDto {
   title!: string;
 
   @ApiProperty({
-    description: 'Detailed description of the issue. Provide as much context as possible to help AI classification.',
+    description:
+      'Detailed description of the issue. Provide as much context as possible to help AI classification.',
     example: 'Buraco grande próximo ao cruzamento causando congestionamento.',
     minLength: 1,
   })

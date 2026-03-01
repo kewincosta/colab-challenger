@@ -3,13 +3,22 @@ import { ReportsController } from '../../../src/presentation/http/controllers/re
 import type { CreateReportUseCase } from '../../../src/application/reports/use-cases/create-report.use-case';
 import type { CreateReportDto } from '../../../src/presentation/http/dto/create-report.dto';
 
+const VALID_LOCATION = {
+  street: 'Praça da Sé',
+  number: '123',
+  neighborhood: 'Sé',
+  city: 'São Paulo',
+  state: 'SP',
+  postcode: '01001-000',
+};
+
 function createMockCreateReportUseCase() {
   return {
     execute: vi.fn().mockResolvedValue({
       id: 'test-uuid',
       title: 'Broken streetlight',
       description: 'Light out for 3 days.',
-      location: '01310-100',
+      location: VALID_LOCATION,
       createdAt: new Date('2026-01-15T10:00:00Z'),
       classificationStatus: 'PENDING',
     }),
@@ -24,7 +33,7 @@ describe('ReportsController', () => {
     const dto: CreateReportDto = {
       title: 'Broken streetlight',
       description: 'Light out for 3 days.',
-      location: '01310-100',
+      location: VALID_LOCATION,
     };
 
     // Act
@@ -34,7 +43,7 @@ describe('ReportsController', () => {
     expect(useCase.execute).toHaveBeenCalledWith({
       title: 'Broken streetlight',
       description: 'Light out for 3 days.',
-      location: '01310-100',
+      location: VALID_LOCATION,
     });
     expect(result.id).toBe('test-uuid');
     expect(result.title).toBe('Broken streetlight');
@@ -46,11 +55,17 @@ describe('ReportsController', () => {
     // Arrange
     const useCase = createMockCreateReportUseCase();
     const controller = new ReportsController(useCase);
-    const objectLocation = { lat: -23.55, lng: -46.63 };
+    const locationWithoutNumber = {
+      street: 'Rua Sem Número',
+      neighborhood: 'Centro',
+      city: 'São Paulo',
+      state: 'SP',
+      postcode: '01001-000',
+    };
     const dto: CreateReportDto = {
       title: 'Pothole',
       description: 'Deep pothole.',
-      location: objectLocation,
+      location: locationWithoutNumber,
     };
 
     // Act
@@ -58,7 +73,7 @@ describe('ReportsController', () => {
 
     // Assert
     expect(useCase.execute).toHaveBeenCalledWith(
-      expect.objectContaining({ location: objectLocation }),
+      expect.objectContaining({ location: locationWithoutNumber }),
     );
   });
 });

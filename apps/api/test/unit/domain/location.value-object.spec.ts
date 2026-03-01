@@ -28,6 +28,12 @@ describe('Location Value Object', () => {
     expect(location.getValue().complement).toBe('Bloco B');
   });
 
+  it('creates StructuredLocation without number', () => {
+    const { number: _, ...withoutNumber } = VALID_STRUCTURED;
+    const location = Location.create(withoutNumber);
+    expect(location.getValue().number).toBeUndefined();
+  });
+
   it('trims whitespace from string fields', () => {
     const location = Location.create({
       ...VALID_STRUCTURED,
@@ -71,9 +77,8 @@ describe('Location Value Object', () => {
     );
   });
 
-  it('throws when a required field is not a string', () => {
-    expect(() => Location.create({ ...VALID_STRUCTURED, number: 42 })).toThrow(
-      InvalidLocationException,
-    );
+  it('treats non-string number as absent', () => {
+    const location = Location.create({ ...VALID_STRUCTURED, number: 42 });
+    expect(location.getValue().number).toBeUndefined();
   });
 });

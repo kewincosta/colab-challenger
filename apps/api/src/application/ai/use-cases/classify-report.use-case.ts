@@ -23,6 +23,7 @@ import {
   AiValidationError,
   AiTimeoutError,
   AiSafetyBlockedError,
+  AiMaxTokensError,
 } from '../errors';
 import { buildSystemInstruction, buildUserMessage, buildRepairMessage } from '../prompt-builder';
 import { PROMPT_VERSION } from '../types';
@@ -116,6 +117,8 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
         this.logger.error(`[ClassifyReportUseCase] AI timeout: ${err.message}`);
       } else if (err instanceof AiSafetyBlockedError) {
         this.logger.error(`[ClassifyReportUseCase] Safety block: ${err.message}`);
+      } else if (err instanceof AiMaxTokensError) {
+        this.logger.warn(`[ClassifyReportUseCase] MAX_TOKENS truncation: ${err.message}`);
       }
       throw err;
     }

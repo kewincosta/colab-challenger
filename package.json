@@ -19,6 +19,8 @@
     "web:lint": "npm run lint -w @colab-challenger/web",
     "test": "npm run test -w @colab-challenger/api",
     "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run check --workspaces --if-present",
     "build": "npm run build --workspaces --if-present"
   },
   "keywords": [],

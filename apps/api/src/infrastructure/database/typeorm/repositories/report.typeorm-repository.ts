@@ -9,26 +9,31 @@ export class ReportTypeOrmRepository implements ReportRepository {
   constructor(private readonly ormRepository: Repository<ReportOrmEntity>) {}
 
   async save(report: Report): Promise<Report> {
-    const entity = this.toOrmEntity(report);
+    const entity = await this.toOrmEntity(report);
     const saved = await this.ormRepository.save(entity);
     return this.toDomain(saved);
   }
 
   async findById(id: string): Promise<Report | null> {
-    const entity = await this.ormRepository.findOneBy({ id });
+    const entity = await this.ormRepository.findOneBy({ externalId: id });
     if (!entity) {
       return null;
     }
     return this.toDomain(entity);
   }
 
-  private toOrmEntity(report: Report): ReportOrmEntity {
+  private async toOrmEntity(report: Report): Promise<ReportOrmEntity> {
     const entity = new ReportOrmEntity();
 
-    const id = report.getId();
-    if (id) {
-      entity.id = id;
+    const domainId = report.getId();
+    if (domainId) {
+      const existing = await this.ormRepository.findOneBy({ externalId: domainId });
+      if (existing) {
+        entity.id = existing.id;
+      }
+      entity.externalId = domainId;
     }
+
     entity.title = report.getTitle();
     entity.description = report.getDescription();
     entity.location = report.getLocationRaw() as unknown as Record<string, unknown>;
@@ -56,7 +61,7 @@ export class ReportTypeOrmRepository implements ReportRepository {
         classificationAttempts: entity.classificationAttempts,
         lastClassificationError: entity.lastClassificationError ?? null,
       },
-      entity.id,
+      entity.externalId,
     );
   }
 }

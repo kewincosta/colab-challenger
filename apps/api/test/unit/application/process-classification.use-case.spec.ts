@@ -8,6 +8,7 @@ import { Location } from '../../../src/domain/reports/value-objects/location.val
 import { ClassificationStatus } from '../../../src/domain/reports/value-objects/classification-status.value-object';
 import type { ClassifyReportPort } from '../../../src/application/ports/classify-report.port';
 import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
+import { AiSafetyBlockedError } from '../../../src/application/ai/errors';
 import { createMockLogger, createMockClassificationResultRepository } from '../../helpers';
 
 function createPendingReport(id = 'report-1'): Report {
@@ -168,5 +169,21 @@ describe('ProcessClassificationUseCase', () => {
     expect(classificationResultRepo.save).toHaveBeenCalledOnce();
     const lastSaved = savedReports[savedReports.length - 1];
     expect(lastSaved.getClassificationStatus()).toBe(ClassificationStatus.DONE);
+  });
+
+  it('marks report FAILED but does NOT re-throw on safety block (no retry)', async () => {
+    const safetyError = new AiSafetyBlockedError('HARASSMENT:HIGH');
+    (classifyReport.execute as ReturnType<typeof vi.fn>).mockRejectedValue(safetyError);
+
+    // Should NOT throw — safety blocks are deterministic and should not retry
+    await useCase.execute({ reportId: 'report-1', attemptsMade: 1 });
+
+    expect(repo.save).toHaveBeenCalledTimes(2);
+    expect(classificationResultRepo.save).not.toHaveBeenCalled();
+
+    const lastSaved = savedReports[savedReports.length - 1];
+    expect(lastSaved.getClassificationStatus()).toBe(ClassificationStatus.FAILED);
+    expect(lastSaved.getLastClassificationError()).toContain('safety');
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('will not retry'));
   });
 });

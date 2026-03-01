@@ -17,6 +17,6 @@ export class LocationFormatConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage(args: ValidationArguments): string {
-    return `${args.property} must be a structured address object with street, number, neighborhood, city, state and postcode`;
+    return `${args.property} must be a structured address object with street, neighborhood, city, state and postcode (number is optional)`;
   }
 }

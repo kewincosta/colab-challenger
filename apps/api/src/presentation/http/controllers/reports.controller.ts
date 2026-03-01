@@ -30,7 +30,8 @@ export class ReportsController {
       '**Validations Applied:**\n' +
       '- `title`: non-empty string (400 if missing)\n' +
       '- `description`: non-empty string (400 if missing)\n' +
-      '- `location`: must be a valid structured address with street, number, neighborhood, city, state, and postcode (400 if invalid)\n' +
+      '- `location`: must be a valid structured address with street, neighborhood, city, state, and postcode (400 if invalid)\n' +
+      '- `location.number`: optional string\n' +
       '- `location.complement`: optional string\n' +
       '- Unknown/extra fields are rejected (`forbidNonWhitelisted`)\n\n' +
       '**Example Usage:**\n' +
@@ -62,7 +63,7 @@ export class ReportsController {
       '- Required field missing (`title`, `description`, or `location`)\n' +
       '- Field with wrong type (e.g., number instead of string)\n' +
       '- Unknown/extra fields in the body\n' +
-      '- Invalid nested location object (missing street, number, neighborhood, city, state, or postcode)',
+      '- Invalid nested location object (missing street, neighborhood, city, state, or postcode)',
     content: {
       'application/json': {
         examples: {

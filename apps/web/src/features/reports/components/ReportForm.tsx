@@ -127,14 +127,15 @@ export function ReportForm() {
       });
 
       if (response) {
+        const navigationState: Record<string, unknown> = {
+          reportId: response.id,
+          title: response.title,
+          location,
+          classificationStatus: response.classificationStatus,
+        };
         void navigate({
           to: '/confirmation',
-          state: {
-            reportId: response.id,
-            title: response.title,
-            location,
-            classificationStatus: response.classificationStatus,
-          } satisfies Record<string, unknown>,
+          state: navigationState,
         });
       }
     },

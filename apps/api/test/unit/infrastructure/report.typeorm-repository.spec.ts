@@ -17,7 +17,8 @@ const DEFAULT_LOCATION = {
 
 function buildSavedEntity(overrides: Partial<ReportOrmEntity> = {}): ReportOrmEntity {
   const saved = new ReportOrmEntity();
-  saved.id = overrides.id ?? 'uuid-1';
+  saved.id = overrides.id ?? 1;
+  saved.externalId = overrides.externalId ?? 'uuid-1';
   saved.title = overrides.title ?? 'Pothole';
   saved.description = overrides.description ?? 'Deep pothole near bus stop';
   saved.location = overrides.location ?? DEFAULT_LOCATION;
@@ -61,7 +62,8 @@ describe('ReportTypeOrmRepository', () => {
     const ormRepo = {
       save: vi.fn(async (entity: ReportOrmEntity) =>
         buildSavedEntity({
-          id: 'uuid-2',
+          id: 2,
+          externalId: 'uuid-2',
           title: entity.title,
           description: entity.description,
           location: entity.location,
@@ -141,7 +143,8 @@ describe('ReportTypeOrmRepository', () => {
     const ormRepo = {
       findOneBy: vi.fn(async () =>
         buildSavedEntity({
-          id: 'found-id',
+          id: 10,
+          externalId: 'found-id',
           title: 'Found report',
           description: 'A found report',
           classificationStatus: 'PROCESSING',
@@ -156,7 +159,7 @@ describe('ReportTypeOrmRepository', () => {
     expect(report!.getId()).toBe('found-id');
     expect(report!.getTitle()).toBe('Found report');
     expect(report!.getClassificationStatus()).toBe(ClassificationStatus.PROCESSING);
-    expect(ormRepo.findOneBy).toHaveBeenCalledWith({ id: 'found-id' });
+    expect(ormRepo.findOneBy).toHaveBeenCalledWith({ externalId: 'found-id' });
   });
 
   it('findById returns null when not found', async () => {

@@ -4,6 +4,7 @@ import {
   AiTimeoutError,
   AiSafetyBlockedError,
   AiInvalidJsonError,
+  AiMaxTokensError,
 } from '../../../src/application/ai/errors';
 import { createMockLogger } from '../../helpers';
 import type { AppLoggerPort } from '../../../src/application/ports/logger.port';
@@ -20,7 +21,7 @@ vi.mock('@google/genai', () => {
   }
   return {
     GoogleGenAI,
-    HarmBlockThreshold: { BLOCK_MEDIUM_AND_ABOVE: 'BLOCK_MEDIUM_AND_ABOVE' },
+    HarmBlockThreshold: { BLOCK_ONLY_HIGH: 'BLOCK_ONLY_HIGH' },
     HarmCategory: {
       HARM_CATEGORY_HARASSMENT: 'HARM_CATEGORY_HARASSMENT',
       HARM_CATEGORY_HATE_SPEECH: 'HARM_CATEGORY_HATE_SPEECH',
@@ -151,6 +152,22 @@ describe('GeminiClient', () => {
     await expect(client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE)).rejects.toBeInstanceOf(
       AiTimeoutError,
     );
+  });
+
+  it('throws AiMaxTokensError when finishReason is MAX_TOKENS', async () => {
+    // Arrange — simulate truncated response due to token limit
+    mockGenerateContent.mockResolvedValue({
+      text: '{"category":"Iluminação Pública","priority":"Alta","technical_summary":"Poste com',
+      promptFeedback: {},
+      candidates: [{ finishReason: 'MAX_TOKENS' }],
+    });
+    const client = new GeminiClient(createMockConfig(), logger);
+
+    // Act & Assert
+    await expect(client.generate(SYSTEM_INSTRUCTION, USER_MESSAGE)).rejects.toBeInstanceOf(
+      AiMaxTokensError,
+    );
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('MAX_TOKENS'));
   });
 
   it('passes JSON schema to Gemini config when provided', async () => {

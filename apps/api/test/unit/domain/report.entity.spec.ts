@@ -132,14 +132,16 @@ describe('Report Entity', () => {
     const report = Report.create(validProps());
     expect(report.getLocation().getValue().street).toBe('Rua das Flores');
 
-    report.moveTo(Location.create({
-      street: 'Av. Paulista',
-      number: '1000',
-      neighborhood: 'Bela Vista',
-      city: 'São Paulo',
-      state: 'SP',
-      postcode: '01310-100',
-    }));
+    report.moveTo(
+      Location.create({
+        street: 'Av. Paulista',
+        number: '1000',
+        neighborhood: 'Bela Vista',
+        city: 'São Paulo',
+        state: 'SP',
+        postcode: '01310-100',
+      }),
+    );
     expect(report.getLocationRaw().street).toBe('Av. Paulista');
   });
 });

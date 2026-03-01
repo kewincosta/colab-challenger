@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Generated,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -11,14 +12,18 @@ import { ReportOrmEntity } from './report.orm-entity';
 
 @Entity({ name: 'classification_results' })
 export class ClassificationResultOrmEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('increment')
+  id!: number;
 
-  @Column({ name: 'report_id', type: 'uuid', unique: true })
-  reportId!: string;
+  @Column({ name: 'external_id', type: 'uuid', unique: true })
+  @Generated('uuid')
+  externalId!: string;
+
+  @Column({ name: 'report_external_id', type: 'uuid', unique: true })
+  reportExternalId!: string;
 
   @OneToOne(() => ReportOrmEntity)
-  @JoinColumn({ name: 'report_id' })
+  @JoinColumn({ name: 'report_external_id', referencedColumnName: 'externalId' })
   report!: ReportOrmEntity;
 
   @Column({ type: 'varchar', length: 50 })

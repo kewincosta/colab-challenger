@@ -8,27 +8,32 @@ export class ClassificationResultTypeOrmRepository implements ClassificationResu
   constructor(private readonly ormRepository: Repository<ClassificationResultOrmEntity>) {}
 
   async save(result: ClassificationResult): Promise<ClassificationResult> {
-    const entity = this.toOrmEntity(result);
+    const entity = await this.toOrmEntity(result);
     const saved = await this.ormRepository.save(entity);
     return this.toDomain(saved);
   }
 
   async findByReportId(reportId: string): Promise<ClassificationResult | null> {
-    const entity = await this.ormRepository.findOneBy({ reportId });
+    const entity = await this.ormRepository.findOneBy({ reportExternalId: reportId });
     if (!entity) {
       return null;
     }
     return this.toDomain(entity);
   }
 
-  private toOrmEntity(result: ClassificationResult): ClassificationResultOrmEntity {
+  private async toOrmEntity(result: ClassificationResult): Promise<ClassificationResultOrmEntity> {
     const entity = new ClassificationResultOrmEntity();
 
-    const id = result.getId();
-    if (id) {
-      entity.id = id;
+    const domainId = result.getId();
+    if (domainId) {
+      const existing = await this.ormRepository.findOneBy({ externalId: domainId });
+      if (existing) {
+        entity.id = existing.id;
+      }
+      entity.externalId = domainId;
     }
-    entity.reportId = result.getReportId();
+
+    entity.reportExternalId = result.getReportId();
     entity.category = result.getCategory();
     entity.priority = result.getPriority();
     entity.technicalSummary = result.getTechnicalSummary();
@@ -40,7 +45,7 @@ export class ClassificationResultTypeOrmRepository implements ClassificationResu
   private toDomain(entity: ClassificationResultOrmEntity): ClassificationResult {
     return ClassificationResult.restore(
       {
-        reportId: entity.reportId,
+        reportId: entity.reportExternalId,
         category: entity.category,
         priority: entity.priority,
         technicalSummary: entity.technicalSummary,
@@ -52,7 +57,7 @@ export class ClassificationResultTypeOrmRepository implements ClassificationResu
         createdAt: entity.createdAt,
         updatedAt: entity.updatedAt,
       },
-      entity.id,
+      entity.externalId,
     );
   }
 }

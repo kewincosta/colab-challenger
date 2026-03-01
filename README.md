@@ -14,6 +14,7 @@
 - [Diagrama de Sequência](#diagrama-de-sequência)
 - [Arquitetura do Backend](#arquitetura-do-backend)
   - [Clean Architecture e DDD](#clean-architecture-e-ddd)
+  - [Estratégia de IDs: Inteiro Interno + UUID Externo](#estratégia-de-ids-inteiro-interno--uuid-externo)
   - [Processamento Assíncrono com Fila](#processamento-assíncrono-com-fila)
   - [Integração com IA (Google Gemini)](#integração-com-ia-google-gemini)
   - [Cache de Classificação](#cache-de-classificação)
@@ -244,6 +245,32 @@ A entidade `Report` possui lifecycle methods (`startClassification()`, `complete
 
 ---
 
+### Estratégia de IDs: Inteiro Interno + UUID Externo
+
+As tabelas `reports` e `classification_results` utilizam uma estratégia de **chave primária dupla**:
+
+| Coluna | Tipo | Propósito |
+|---|---|---|
+| `id` | `integer` (auto-increment) | PK interna — índice clusterizado sequencial, otimizado para performance de escrita e joins |
+| `external_id` | `uuid` (v4, unique) | ID exposto na API — não-enumerável, seguro para exposição pública |
+
+**Motivações:**
+
+1. **Performance no banco**: chaves primárias inteiras geram índices B-tree sequenciais, evitando page splits e fragmentação que UUIDs v4 causam em índices clusterizados. Inserções são append-only, e joins entre tabelas são mais eficientes com inteiros de 4 bytes vs. UUIDs de 16 bytes.
+2. **Segurança**: expor IDs inteiros sequenciais na API permitiria enumeração de recursos (IDOR). O `external_id` (UUID v4) é criptograficamente aleatório, tornando impraticável adivinhar IDs de outros relatos.
+3. **Separação de responsabilidades**: a camada de domínio trabalha apenas com o `external_id` (string UUID) como identificador. O `id` inteiro nunca escapa da camada de infraestrutura (ORM/repositório).
+
+**Mapeamento no repositório:**
+
+```
+Domínio (entity.id)  ↔  ORM (entity.externalId)   — UUID exposto na API
+                        ORM (entity.id)            — inteiro interno (nunca exposto)
+```
+
+A relação entre `classification_results` e `reports` utiliza o `external_id` como FK, mantendo a integridade referencial sem expor IDs internos entre camadas.
+
+---
+
 ### Processamento Assíncrono com Fila
 
 A classificação por IA é desacoplada do request HTTP usando **BullMQ** com **Redis** como broker:
@@ -300,7 +327,26 @@ Quando informações são incompletas, o modelo deve escolher prioridade conserv
 
 #### Safety Settings
 
-O cliente Gemini configura `BLOCK_MEDIUM_AND_ABOVE` para todas as 4 categorias de harm (harassment, hate speech, sexually explicit, dangerous content). Respostas bloqueadas por safety geram `AiSafetyBlockedError`.
+O cliente Gemini configura `BLOCK_ONLY_HIGH` para todas as 4 categorias de harm. Esse é o threshold mais permissivo que ainda bloqueia conteúdo de alta severidade — escolhido porque este é um serviço de triagem municipal que processa reclamações reais de cidadãos:
+
+| Categoria | Threshold | Motivo |
+|---|---|---|
+| **Harassment** | `BLOCK_ONLY_HIGH` | Relatos podem conter linguagem rude ou frustrada |
+| **Hate Speech** | `BLOCK_ONLY_HIGH` | Evita falsos positivos em descrições de edge-case |
+| **Sexually Explicit** | `BLOCK_ONLY_HIGH` | Improvável em relatos urbanos, mas previne bloqueios indevidos |
+| **Dangerous Content** | `BLOCK_ONLY_HIGH` | Relatos sobre fios expostos, vazamento de gás, risco de desabamento são problemas municipais legítimos |
+
+Respostas bloqueadas por safety são detectadas em dois níveis:
+- **Prompt-level**: `promptFeedback.blockReason` presente.
+- **Output-level**: `finishReason` é `SAFETY`, `RECITATION`, `BLOCKLIST` ou `PROHIBITED_CONTENT`.
+
+`AiSafetyBlockedError` é lançado nesses casos. O `ProcessClassificationUseCase` captura esse erro, marca o relato como `FAILED`, mas **não re-lança a exceção** — evitando retries infinitos no BullMQ, já que o bloqueio é determinístico.
+
+#### Truncação por Limite de Tokens
+
+Quando `finishReason` é `MAX_TOKENS`, a resposta JSON foi cortada por exceder `maxOutputTokens`. O `GeminiClient` detecta isso e lança `AiMaxTokensError` — um erro distinto de `AiSafetyBlockedError`. Como truncação por tokens **pode** ser resolvida em retry (o modelo pode gerar uma resposta mais curta), esse erro **é re-lançado** para que o BullMQ retente com backoff exponencial.
+
+Respostas com JSON truncado por outros motivos (parse error "Unterminated string", "Unexpected end of JSON") seguem o fluxo normal de **repair retry**: o use case envia um repair prompt uma vez antes de falhar definitivamente.
 
 #### Configuração do Modelo
 
@@ -332,7 +378,7 @@ Para evitar chamadas redundantes à IA (custo e latência), o sistema implementa
 
 O projeto utiliza **Vitest** (com SWC para transpilação rápida) e segue a pirâmide de testes:
 
-#### Testes Unitários (~28 arquivos)
+#### Testes Unitários (22 arquivos)
 
 - **Domain**: ciclo de vida da entidade Report (create, transitions), validação de Value Objects (título vazio, descrição vazia, localização inválida).
 - **Application**: Use Cases testados com mocks injetados — `CreateReportUseCase`, `ProcessClassificationUseCase` (happy path, idempotência, falha), `ClassifyReportUseCase` (cache hit, repair retry, dupla falha, timeout, safety block).
@@ -438,7 +484,7 @@ colab-challenger/
 │   │   │   └── shared/                # Config, logger, constantes, tokens DI
 │   │   └── test/
 │   │       ├── helpers/               # In-memory repos, mocks, fixtures
-│   │       ├── unit/                  # ~28 arquivos de testes unitários
+│   │       ├── unit/                  # 22 arquivos de testes unitários
 │   │       └── integration/           # Testes E2E com SuperTest
 │   └── web/                           # Frontend React
 │       └── src/

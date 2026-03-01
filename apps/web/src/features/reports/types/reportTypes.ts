@@ -3,7 +3,7 @@
  */
 export interface StructuredLocation {
   street: string;
-  number: string;
+  number?: string;
   complement?: string;
   neighborhood: string;
   city: string;

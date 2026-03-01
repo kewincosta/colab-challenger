@@ -1,9 +1,13 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Generated, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'reports' })
 export class ReportOrmEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('increment')
+  id!: number;
+
+  @Column({ name: 'external_id', type: 'uuid', unique: true })
+  @Generated('uuid')
+  externalId!: string;
 
   @Column({ type: 'varchar', length: 255 })
   title!: string;

@@ -177,18 +177,20 @@ describe('Reports API (integration)', () => {
     mockPublishJob.mockRejectedValueOnce(new Error('Queue unavailable'));
 
     await expect(
-      request(app.getHttpServer()).post('/api/reports').send({
-        title: 'Street flooding',
-        description: 'Water flooding the intersection after heavy rain',
-        location: {
-          street: 'Rua Augusta',
-          number: '100',
-          neighborhood: 'Consolação',
-          city: 'São Paulo',
-          state: 'SP',
-          postcode: '01304-000',
-        },
-      }),
+      request(app.getHttpServer())
+        .post('/api/reports')
+        .send({
+          title: 'Street flooding',
+          description: 'Water flooding the intersection after heavy rain',
+          location: {
+            street: 'Rua Augusta',
+            number: '100',
+            neighborhood: 'Consolação',
+            city: 'São Paulo',
+            state: 'SP',
+            postcode: '01304-000',
+          },
+        }),
     ).resolves.toBeDefined();
 
     // The queue failure propagates as a 500

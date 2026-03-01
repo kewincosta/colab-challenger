@@ -44,10 +44,7 @@ async function bootstrap(): Promise<void> {
     )
     .setVersion('1.0.0')
     .addServer('http://localhost:3000', 'Local Development')
-    .addTag(
-      'Reports',
-      'Endpoints for creating and managing citizen urban issue reports.',
-    )
+    .addTag('Reports', 'Endpoints for creating and managing citizen urban issue reports.')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

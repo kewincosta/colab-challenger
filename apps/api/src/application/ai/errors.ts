@@ -37,3 +37,13 @@ export class AiSafetyBlockedError extends Error {
     this.name = 'AiSafetyBlockedError';
   }
 }
+
+export class AiMaxTokensError extends Error {
+  constructor(readonly truncatedLength: number) {
+    super(
+      `AI response truncated by MAX_TOKENS limit (${truncatedLength} chars). ` +
+        'Consider increasing maxOutputTokens.',
+    );
+    this.name = 'AiMaxTokensError';
+  }
+}

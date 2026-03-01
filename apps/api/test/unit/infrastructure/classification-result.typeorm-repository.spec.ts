@@ -9,8 +9,9 @@ function buildSavedEntity(
   overrides: Partial<ClassificationResultOrmEntity> = {},
 ): ClassificationResultOrmEntity {
   const saved = new ClassificationResultOrmEntity();
-  saved.id = overrides.id ?? 'cr-uuid-1';
-  saved.reportId = overrides.reportId ?? 'report-1';
+  saved.id = overrides.id ?? 1;
+  saved.externalId = overrides.externalId ?? 'cr-uuid-1';
+  saved.reportExternalId = overrides.reportExternalId ?? 'report-1';
   saved.category = overrides.category ?? 'Iluminação Pública';
   saved.priority = overrides.priority ?? 'Alta';
   saved.technicalSummary = overrides.technicalSummary ?? 'Poste com defeito.';
@@ -25,7 +26,7 @@ describe('ClassificationResultTypeOrmRepository', () => {
     const ormRepo = {
       save: vi.fn(async (entity: ClassificationResultOrmEntity) =>
         buildSavedEntity({
-          reportId: entity.reportId,
+          reportExternalId: entity.reportExternalId,
           category: entity.category,
           priority: entity.priority,
           technicalSummary: entity.technicalSummary,
@@ -58,8 +59,9 @@ describe('ClassificationResultTypeOrmRepository', () => {
     const ormRepo = {
       findOneBy: vi.fn(async () =>
         buildSavedEntity({
-          id: 'cr-found',
-          reportId: 'report-42',
+          id: 5,
+          externalId: 'cr-found',
+          reportExternalId: 'report-42',
           category: 'Infraestrutura Urbana',
           priority: 'Média',
           technicalSummary: 'Degradação detectada.',
@@ -74,7 +76,7 @@ describe('ClassificationResultTypeOrmRepository', () => {
     expect(result!.getId()).toBe('cr-found');
     expect(result!.getReportId()).toBe('report-42');
     expect(result!.getCategory()).toBe('Infraestrutura Urbana');
-    expect(ormRepo.findOneBy).toHaveBeenCalledWith({ reportId: 'report-42' });
+    expect(ormRepo.findOneBy).toHaveBeenCalledWith({ reportExternalId: 'report-42' });
   });
 
   it('findByReportId returns null when not found', async () => {
@@ -95,8 +97,9 @@ describe('ClassificationResultTypeOrmRepository', () => {
     const ormRepo = {
       save: vi.fn(async () =>
         buildSavedEntity({
-          id: 'cr-mapped',
-          reportId: 'report-99',
+          id: 7,
+          externalId: 'cr-mapped',
+          reportExternalId: 'report-99',
           category: 'Outros',
           priority: 'Baixa',
           technicalSummary: 'Fora do escopo.',

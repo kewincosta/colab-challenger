@@ -2,7 +2,9 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useI18n } from '@/shared/i18n/useI18n';
 import { Button } from '@/components/ui/button';
 import { ConfirmationSummary } from '@/features/reports/components/ConfirmationSummary';
-import { CheckCircleIcon, ArrowLeftIcon } from '@phosphor-icons/react';
+import { CheckCircleIcon, ArrowLeftIcon, BuildingsIcon } from '@phosphor-icons/react';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
+import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher';
 import type { StructuredLocation } from '@/features/reports/types/reportTypes';
 
 interface ConfirmationState {
@@ -25,13 +27,32 @@ export function ConfirmationPage() {
 
   if (!state?.reportId) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <p className="text-muted-foreground">{t('confirmation.noData')}</p>
-          <Button onClick={handleBackToHome}>
-            <ArrowLeftIcon className="h-5 w-5" />
-            {t('confirmation.backToHome')}
-          </Button>
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card">
+          <div className="container mx-auto px-4 sm:px-8 py-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <BuildingsIcon className="h-8 w-8 text-primary" weight="fill" />
+                <h1 className="text-xl font-bold text-foreground">{t('header.siteName')}</h1>
+              </div>
+              <div className="flex flex-row items-center gap-3">
+                <LanguageSwitcher />
+                <ThemeSwitcher />
+              </div>
+            </div>
+          </div>
+        </header>
+        <div
+          className="flex items-center justify-center p-4"
+          style={{ minHeight: 'calc(100vh - 73px)' }}
+        >
+          <div className="text-center space-y-4">
+            <p className="text-muted-foreground">{t('confirmation.noData')}</p>
+            <Button onClick={handleBackToHome}>
+              <ArrowLeftIcon className="h-5 w-5" />
+              {t('confirmation.backToHome')}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -39,6 +60,20 @@ export function ConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-4 sm:px-8 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <BuildingsIcon className="h-8 w-8 text-primary" weight="fill" />
+              <h1 className="text-xl font-bold text-foreground">{t('header.siteName')}</h1>
+            </div>
+            <div className="flex flex-row items-center gap-3">
+              <LanguageSwitcher />
+              <ThemeSwitcher />
+            </div>
+          </div>
+        </div>
+      </header>
       <div className="container mx-auto px-4 sm:px-8 py-8 sm:py-12">
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="flex flex-col items-center text-center space-y-4">
