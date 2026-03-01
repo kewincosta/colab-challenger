@@ -1,4 +1,4 @@
-# Smart Municipal Service — AI-Powered Urban Triage
+# Serviço de Triagem Municipal
 
 > Plataforma inteligente para recebimento e classificação automática de relatos de problemas urbanos, utilizando IA generativa (Google Gemini) com processamento assíncrono via fila.
 
@@ -20,13 +20,14 @@
   - [Testes Automatizados](#testes-automatizados)
 - [API — Endpoints](#api--endpoints)
 - [Estrutura de Pastas](#estrutura-de-pastas)
+- [Convenção de Idioma](#convenção-de-idioma)
 - [Documentação Complementar](#documentação-complementar)
 
 ---
 
 ## Visão Geral
 
-O **Smart Municipal Service** é um sistema para gestão de relatos urbanos. Cidadãos submetem relatos (buracos, iluminação, saneamento, etc.) por meio de um formulário web. O backend recebe, valida e persiste o relato, enfileirando-o automaticamente para classificação por IA. Um worker assíncrono processa a fila, envia o relato ao Google Gemini (com prompt estruturado, anti-alucinação e JSON schema forçado), e armazena o resultado (categoria, prioridade e resumo técnico). Todo o pipeline opera com retentativas exponenciais, cache por hash SHA-256 e idempotência, garantindo resiliência sem intervenção manual.
+O **Serviço de Triagem Municipal** é um sistema para gestão de relatos urbanos. Cidadãos submetem relatos (buracos, iluminação, saneamento, etc.) por meio de um formulário web. O backend recebe, valida e persiste o relato, enfileirando-o automaticamente para classificação por IA. Um worker assíncrono processa a fila, envia o relato ao Google Gemini (com prompt estruturado, anti-alucinação e JSON schema forçado), e armazena o resultado (categoria, prioridade e resumo técnico). Todo o pipeline opera com retentativas exponenciais, cache por hash SHA-256 e idempotência, garantindo resiliência sem intervenção manual.
 
 ---
 
@@ -450,6 +451,24 @@ colab-challenger/
 ├── docker-compose.yml                 # PostgreSQL, Redis, App
 └── package.json                       # Monorepo (npm workspaces)
 ```
+
+---
+
+## Convenção de Idioma
+
+O projeto adota uma convenção deliberada de idioma misto (pt-BR e inglês), seguindo o contexto de uso e as convenções da comunidade de desenvolvimento:
+
+| Contexto | Idioma | Justificativa |
+|---|---|---|
+| Código-fonte (classes, variáveis, funções) | **Inglês** | Convenção da comunidade de desenvolvimento |
+| Prompt da IA (system instruction, taxonomia) | **pt-BR** | O modelo classifica relatos em português; categorias e prioridades são em pt-BR |
+| README e documentação do projeto | **pt-BR** | Projeto voltado para apresentação técnica no Brasil |
+| Valores persistidos no banco (categorias, prioridades, resumos) | **pt-BR** | Dados de domínio brasileiro |
+| Swagger: descrições e nomes de atributos | **Inglês** | Padrão OpenAPI — atributos seguem o código |
+| Swagger: exemplos de request | **pt-BR** | Consistência com o README e com dados reais de uso |
+| Frontend: interface do usuário (i18n) | **pt-BR / en-US** | Suporte bilíngue via sistema de internacionalização |
+
+> **Regra prática:** código e metadados técnicos em inglês; conteúdo de domínio, documentação e exemplos voltados ao usuário em pt-BR.
 
 ---
 

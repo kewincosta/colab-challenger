@@ -11,23 +11,6 @@ export interface StructuredLocation {
   postcode: string;
 }
 
-export interface Address {
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  reference?: string;
-}
-
-export interface ReportFormValues {
-  title: string;
-  description: string;
-  cep?: string;
-  address?: Address;
-}
-
 /**
  * Payload sent to POST /api/reports.
  * The `location` field is a structured address object.

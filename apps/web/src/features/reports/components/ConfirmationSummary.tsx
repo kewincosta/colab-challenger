@@ -37,7 +37,7 @@ export function ConfirmationSummary({ title, location }: ConfirmationSummaryProp
 
           <div>
             <label className="text-sm font-medium text-muted-foreground">
-              {t('confirmation.locationMethod')}
+              {t('confirmation.reportedAddress')}
             </label>
             <div className="flex items-center gap-2 mt-1">
               <MapPinIcon className="h-5 w-5 text-primary" />

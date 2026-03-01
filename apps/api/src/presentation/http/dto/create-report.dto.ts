@@ -73,7 +73,7 @@ export class StructuredLocationDto {
 export class CreateReportDto {
   @ApiProperty({
     description: 'Short title summarizing the urban issue',
-    example: 'Pothole on Main Street',
+    example: 'Buraco na Rua Principal',
     minLength: 1,
     maxLength: 255,
   })
@@ -83,7 +83,7 @@ export class CreateReportDto {
 
   @ApiProperty({
     description: 'Detailed description of the issue. Provide as much context as possible to help AI classification.',
-    example: 'Large pothole near the intersection causing traffic delays.',
+    example: 'Buraco grande próximo ao cruzamento causando congestionamento.',
     minLength: 1,
   })
   @IsString()

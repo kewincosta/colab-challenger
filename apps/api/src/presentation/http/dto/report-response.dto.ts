@@ -19,7 +19,7 @@ export class ReportResponseDto {
 
   @ApiProperty({
     description: 'Short title summarizing the urban issue',
-    example: 'Pothole on Main Street',
+    example: 'Buraco na Rua Principal',
     minLength: 1,
     maxLength: 255,
   })
@@ -27,7 +27,7 @@ export class ReportResponseDto {
 
   @ApiProperty({
     description: 'Detailed description of the issue',
-    example: 'Large pothole near the intersection causing traffic delays.',
+    example: 'Buraco grande próximo ao cruzamento causando congestionamento.',
     minLength: 1,
   })
   description!: string;

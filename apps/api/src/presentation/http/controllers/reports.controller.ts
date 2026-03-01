@@ -38,8 +38,8 @@ export class ReportsController {
       'POST /api/reports\n' +
       'Content-Type: application/json\n\n' +
       '{\n' +
-      '  "title": "Pothole on Main Street",\n' +
-      '  "description": "Large pothole near the intersection causing traffic delays.",\n' +
+      '  "title": "Buraco na Rua Principal",\n' +
+      '  "description": "Buraco grande próximo ao cruzamento causando congestionamento.",\n' +
       '  "location": {\n' +
       '    "street": "Praça da Sé",\n' +
       '    "number": "123",\n' +

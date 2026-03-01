@@ -26,7 +26,7 @@ import {
 } from '../errors';
 import { buildSystemInstruction, buildUserMessage, buildRepairMessage } from '../prompt-builder';
 import { PROMPT_VERSION } from '../types';
-import type { AiClassificationResult, AiEnrichmentInput } from '../types';
+import type { AiClassificationResult, AiClassificationInput } from '../types';
 
 export class ClassifyReportUseCase implements ClassifyReportPort {
   constructor(
@@ -47,7 +47,7 @@ export class ClassifyReportUseCase implements ClassifyReportPort {
    * 6. On parse/validation failure, build repair prompt and retry.
    * 7. Cache and return result.
    */
-  async execute(input: AiEnrichmentInput): Promise<AiClassificationResult> {
+  async execute(input: AiClassificationInput): Promise<AiClassificationResult> {
     const cacheKey = buildCacheKey(PROMPT_VERSION, input.title, input.description, input.location);
 
     // 1. Check cache

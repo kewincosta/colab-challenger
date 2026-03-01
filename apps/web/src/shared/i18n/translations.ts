@@ -1,7 +1,7 @@
 export const translations = {
   ptBR: {
     header: {
-      siteName: 'Serviços do Município',
+      siteName: 'Serviço de Triagem Municipal',
       langPT: 'PT-BR',
       langEN: 'EN-US',
       langPTFull: 'Português (Brasil)',
@@ -16,7 +16,7 @@ export const translations = {
       title: 'Relate um problema na sua cidade',
       subtitle: 'Sua voz ajuda o município a identificar e priorizar melhorias com mais agilidade.',
       description:
-        'Este serviço conecta você à equipe responsável pela manutenção urbana. Se você encontrou um problema no seu bairro, registre sua solicitação — sua participação ajuda a construir uma cidade melhor para todos.',
+        'Este serviço conecta você à equipe responsável pela manutenção urbana. Se você encontrou um problema no seu bairro, registre seu relato — sua participação ajuda a construir uma cidade melhor para todos.',
     },
     benefits: {
       title: 'Como funciona',
@@ -30,7 +30,7 @@ export const translations = {
       },
       routing: {
         title: 'Encaminhamento rápido',
-        description: 'Sua solicitação chega à equipe responsável',
+        description: 'Seu relato chega à equipe responsável',
       },
       civic: {
         title: 'Foco no serviço público',
@@ -38,7 +38,7 @@ export const translations = {
       },
     },
     form: {
-      sectionTitle: 'Registrar solicitação',
+      sectionTitle: 'Registrar relato',
       titleLabel: 'Título',
       titlePlaceholder: 'Ex: Buraco na calçada da Rua Principal',
       descriptionLabel: 'Descrição do problema',
@@ -61,7 +61,7 @@ export const translations = {
       statePlaceholder: 'UF',
       referenceLabel: 'Ponto de referência (opcional)',
       referencePlaceholder: 'Ex: Próximo ao mercado',
-      submitButton: 'Enviar solicitação',
+      submitButton: 'Enviar relato',
       submitting: 'Enviando...',
       lookingUpCep: 'Buscando endereço...',
       cepNotFound: 'CEP não encontrado',
@@ -85,26 +85,28 @@ export const translations = {
       stateRequired: 'O estado é obrigatório',
     },
     errors: {
-      submissionFailed: 'Erro ao enviar solicitação',
+      submissionFailed: 'Erro ao enviar relato',
       submissionFailedMessage:
-        'Não foi possível enviar sua solicitação. Por favor, tente novamente.',
+        'Não foi possível enviar seu relato. Por favor, tente novamente.',
       tryAgain: 'Tentar novamente',
     },
     confirmation: {
-      title: 'Recebemos sua solicitação!',
+      title: 'Recebemos seu relato!',
       message:
-        'Obrigado por contribuir com a melhoria da nossa cidade. Sua solicitação foi registrada e será encaminhada para análise.',
-      summaryTitle: 'Resumo da solicitação',
+        'Obrigado por contribuir com a melhoria da nossa cidade. Seu relato foi registrado e será encaminhado para análise.',
+      summaryTitle: 'Resumo do relato',
       reportTitle: 'Título',
-      locationMethod: 'Método de localização',
+      reportedAddress: 'Endereço informado',
       coordinates: 'Coordenadas',
       cep: 'CEP',
-      cta: 'Registrar outra solicitação',
+      cta: 'Registrar outro relato',
+      noData: 'Nenhum dado de confirmação disponível',
+      backToHome: 'Voltar ao início',
     },
   },
   enUS: {
     header: {
-      siteName: 'Municipal Services',
+      siteName: 'Municipal Triage Service',
       langPT: 'PT-BR',
       langEN: 'EN-US',
       langPTFull: 'Português (Brasil)',
@@ -199,10 +201,12 @@ export const translations = {
         'Thank you for contributing to the improvement of our city. Your report has been registered and will be forwarded for analysis.',
       summaryTitle: 'Report summary',
       reportTitle: 'Title',
-      locationMethod: 'Location method',
+      reportedAddress: 'Reported address',
       coordinates: 'Coordinates',
       cep: 'Postal Code',
       cta: 'Submit another report',
+      noData: 'No confirmation data available',
+      backToHome: 'Back to Home',
     },
   },
 } as const;

@@ -1,5 +1,5 @@
 /**
- * AI Enrichment types for urban report classification.
+ * AI Classification types for urban report classification.
  *
  * Taxonomia hierárquica: Categoria → Subcategorias.
  * O modelo identifica a subcategoria mais específica primeiro e
@@ -135,7 +135,7 @@ export interface AiClassificationResult {
   readonly technical_summary: string;
 }
 
-export interface AiEnrichmentInput {
+export interface AiClassificationInput {
   readonly title: string;
   readonly description: string;
   readonly location: string | Record<string, unknown>;

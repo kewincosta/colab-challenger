@@ -10,7 +10,7 @@
  */
 
 import { CATEGORY_SUBCATEGORIES, REPORT_CATEGORIES, PRIORITY_LEVELS } from './types';
-import type { AiEnrichmentInput } from './types';
+import type { AiClassificationInput } from './types';
 
 /**
  * Gera a seção de taxonomia formatada para o prompt, a partir de CATEGORY_SUBCATEGORIES.
@@ -208,7 +208,7 @@ Prefira classificação conservadora.`;
 /**
  * Constrói a mensagem do usuário contendo o relato a ser classificado.
  */
-export function buildUserMessage(input: AiEnrichmentInput): string {
+export function buildUserMessage(input: AiClassificationInput): string {
   const locationStr =
     typeof input.location === 'string' ? input.location : JSON.stringify(input.location);
 

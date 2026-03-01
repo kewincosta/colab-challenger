@@ -27,10 +27,10 @@ export function ConfirmationPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <p className="text-muted-foreground">No confirmation data available</p>
+          <p className="text-muted-foreground">{t('confirmation.noData')}</p>
           <Button onClick={handleBackToHome}>
             <ArrowLeftIcon className="h-5 w-5" />
-            Back to Home
+            {t('confirmation.backToHome')}
           </Button>
         </div>
       </div>

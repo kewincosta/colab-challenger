@@ -4,12 +4,12 @@
  * Provides canonical input/output shapes used across multiple test files.
  */
 
-import type { AiClassificationResult, AiEnrichmentInput } from '../../src/application/ai/types';
+import type { AiClassificationResult, AiClassificationInput } from '../../src/application/ai/types';
 import type { MappedClassification } from '../../src/application/ai/mappers/classification.mapper';
 
-// ── AI Enrichment input ───────────────────────────────────────────────
+// ── AI Classification input ─────────────────────────────────────────────────────────
 
-export const VALID_ENRICHMENT_INPUT: AiEnrichmentInput = {
+export const VALID_CLASSIFICATION_INPUT: AiClassificationInput = {
   title: 'Broken streetlight',
   description: 'The light on Rua das Flores has been out for 3 days.',
   location: '01310-100',

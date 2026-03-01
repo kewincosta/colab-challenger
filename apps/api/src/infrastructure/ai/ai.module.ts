@@ -1,5 +1,5 @@
 /**
- * AI Module – NestJS module wiring for AI enrichment services.
+ * AI Module – NestJS module wiring for AI classification services.
  *
  * Registers GeminiClient (as AiClientPort), RedisCacheAdapter (as AiCache),
  * and ClassifyReportUseCase. Requires ConfigModule to be imported at the app root.
@@ -25,7 +25,7 @@ import {
   APP_LOGGER_TOKEN,
   AI_CLIENT_TOKEN,
   AI_CACHE_TOKEN,
-  AI_ENRICHMENT_SERVICE_TOKEN,
+  AI_CLASSIFICATION_SERVICE_TOKEN,
 } from '../../shared/constants/tokens';
 
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
@@ -56,7 +56,7 @@ const CACHE_PREFIX = 'ai-cache:';
       inject: [ConfigService],
     },
     {
-      provide: AI_ENRICHMENT_SERVICE_TOKEN,
+      provide: AI_CLASSIFICATION_SERVICE_TOKEN,
       useFactory: (
         aiClient: AiClientPort,
         cache: AiCache<AiClassificationResult>,
@@ -65,6 +65,6 @@ const CACHE_PREFIX = 'ai-cache:';
       inject: [AI_CLIENT_TOKEN, AI_CACHE_TOKEN, APP_LOGGER_TOKEN],
     },
   ],
-  exports: [AI_ENRICHMENT_SERVICE_TOKEN],
+  exports: [AI_CLASSIFICATION_SERVICE_TOKEN],
 })
 export class AiModule {}

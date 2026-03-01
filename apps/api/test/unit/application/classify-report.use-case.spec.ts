@@ -12,7 +12,7 @@ import {
   createMockLogger,
   createMockAiClient,
   createMockCache,
-  VALID_ENRICHMENT_INPUT,
+  VALID_CLASSIFICATION_INPUT,
   VALID_CLASSIFICATION_RESULT,
 } from '../../helpers';
 
@@ -20,7 +20,7 @@ import {
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const VALID_INPUT = VALID_ENRICHMENT_INPUT;
+const VALID_INPUT = VALID_CLASSIFICATION_INPUT;
 const VALID_RESULT = VALID_CLASSIFICATION_RESULT;
 const VALID_JSON = JSON.stringify(VALID_RESULT);
 

@@ -5,8 +5,8 @@
  * ClassifyReportUseCase implements it; CreateReportUseCase consumes it.
  */
 
-import type { AiClassificationResult, AiEnrichmentInput } from '../ai/types';
+import type { AiClassificationResult, AiClassificationInput } from '../ai/types';
 
 export interface ClassifyReportPort {
-  execute: (input: AiEnrichmentInput) => Promise<AiClassificationResult>;
+  execute: (input: AiClassificationInput) => Promise<AiClassificationResult>;
 }

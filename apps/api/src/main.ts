@@ -20,7 +20,7 @@ async function bootstrap(): Promise<void> {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Smart Municipal Service – Urban Triage API')
+    .setTitle('Serviço de Triagem Municipal — API')
     .setDescription(
       'Backend API for receiving and managing citizen urban issue reports.\n\n' +
         '**Overview:**\n' +
@@ -56,7 +56,7 @@ async function bootstrap(): Promise<void> {
     customCss:
       '.swagger-ui .topbar .download-url-wrapper { display: none }' +
       ' .swagger-ui .renderedMarkdown li { padding: 6px 0; color: white; }',
-    customSiteTitle: 'Urban Triage API — Documentation',
+    customSiteTitle: 'Serviço de Triagem Municipal — Documentação',
   });
 
   const port = Number(process.env.PORT) || 3000;

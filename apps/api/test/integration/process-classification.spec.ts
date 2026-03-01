@@ -25,7 +25,7 @@ import { ClassificationStatus } from '../../src/domain/reports/value-objects/cla
 import {
   REPORT_REPOSITORY_TOKEN,
   APP_LOGGER_TOKEN,
-  AI_ENRICHMENT_SERVICE_TOKEN,
+  AI_CLASSIFICATION_SERVICE_TOKEN,
   CLASSIFICATION_RESULT_REPOSITORY_TOKEN,
 } from '../../src/shared/constants/tokens';
 
@@ -53,7 +53,7 @@ const mockClassifyReport = createMockClassifyReport();
       provide: CLASSIFICATION_RESULT_REPOSITORY_TOKEN,
       useValue: inMemoryClassificationResultRepo,
     },
-    { provide: AI_ENRICHMENT_SERVICE_TOKEN, useValue: mockClassifyReport },
+    { provide: AI_CLASSIFICATION_SERVICE_TOKEN, useValue: mockClassifyReport },
     {
       provide: ProcessClassificationUseCase,
       useFactory: () =>
