@@ -4,37 +4,67 @@ import { Type } from 'class-transformer';
 
 /** Structured address — the only accepted location format. */
 export class StructuredLocationDto {
-  @ApiProperty({ example: 'Praça da Sé' })
+  @ApiProperty({
+    description: 'Street or avenue name',
+    example: 'Praça da Sé',
+    minLength: 1,
+  })
   @IsString()
   @IsNotEmpty()
   street!: string;
 
-  @ApiProperty({ example: '123' })
+  @ApiProperty({
+    description: 'Street number',
+    example: '123',
+    minLength: 1,
+  })
   @IsString()
   @IsNotEmpty()
   number!: string;
 
-  @ApiPropertyOptional({ example: 'Bloco B' })
+  @ApiPropertyOptional({
+    description: 'Address complement (apartment, block, etc.)',
+    example: 'Bloco B',
+    nullable: true,
+  })
   @IsString()
   @IsOptional()
   complement?: string;
 
-  @ApiProperty({ example: 'Sé' })
+  @ApiProperty({
+    description: 'Neighborhood / district name',
+    example: 'Sé',
+    minLength: 1,
+  })
   @IsString()
   @IsNotEmpty()
   neighborhood!: string;
 
-  @ApiProperty({ example: 'São Paulo' })
+  @ApiProperty({
+    description: 'City name',
+    example: 'São Paulo',
+    minLength: 1,
+  })
   @IsString()
   @IsNotEmpty()
   city!: string;
 
-  @ApiProperty({ example: 'SP' })
+  @ApiProperty({
+    description: 'State abbreviation (2 uppercase letters)',
+    example: 'SP',
+    minLength: 2,
+    maxLength: 2,
+    pattern: '^[A-Z]{2}$',
+  })
   @IsString()
   @IsNotEmpty()
   state!: string;
 
-  @ApiProperty({ example: '01001-000' })
+  @ApiProperty({
+    description: 'Postal code in Brazilian format (XXXXX-XXX or XXXXXXXX)',
+    example: '01001-000',
+    pattern: '^\\d{5}-?\\d{3}$',
+  })
   @IsString()
   @IsNotEmpty()
   postcode!: string;
@@ -44,14 +74,17 @@ export class CreateReportDto {
   @ApiProperty({
     description: 'Short title summarizing the urban issue',
     example: 'Pothole on Main Street',
+    minLength: 1,
+    maxLength: 255,
   })
   @IsString()
   @IsNotEmpty()
   title!: string;
 
   @ApiProperty({
-    description: 'Detailed description of the issue',
+    description: 'Detailed description of the issue. Provide as much context as possible to help AI classification.',
     example: 'Large pothole near the intersection causing traffic delays.',
+    minLength: 1,
   })
   @IsString()
   @IsNotEmpty()
