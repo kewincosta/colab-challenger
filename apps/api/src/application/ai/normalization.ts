@@ -18,8 +18,8 @@ export function normalizeText(text: string): string {
  * Produce a canonical location string for cache keying.
  *
  * - CEP (Brazilian postal code): digits only.
- * - MAP (lat/lng object): round to 4 decimal places, sorted key order.
  * - Generic string: normalize text.
+ * - Object: stringify with sorted keys.
  */
 export function canonicalizeLocation(location: string | Record<string, unknown>): string {
   if (typeof location === 'string') {
@@ -27,14 +27,6 @@ export function canonicalizeLocation(location: string | Record<string, unknown>)
     const isCep = /^\d{5,8}$/v.test(digitsOnly);
     if (isCep) return `CEP:${digitsOnly}`;
     return `STR:${normalizeText(location)}`;
-  }
-
-  if ('lat' in location && 'lng' in location) {
-    const lat = Number(location.lat);
-    const lng = Number(location.lng);
-    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-      return `MAP:${lat.toFixed(4)},${lng.toFixed(4)}`;
-    }
   }
 
   // Fallback: stringify with sorted keys

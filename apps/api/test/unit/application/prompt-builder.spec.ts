@@ -107,11 +107,11 @@ describe('buildUserMessage', () => {
     const result = buildUserMessage({
       title: 'Buraco',
       description: 'Buraco grande',
-      location: { lat: -23.55, lng: -46.63 },
+      location: { street: 'Rua das Flores', neighborhood: 'Centro', city: 'São Paulo', state: 'SP', postcode: '01001-000' },
     });
 
-    expect(result).toContain('-23.55');
-    expect(result).toContain('-46.63');
+    expect(result).toContain('Rua das Flores');
+    expect(result).toContain('São Paulo');
   });
 
   it('contains bottom-up classification reminder', () => {

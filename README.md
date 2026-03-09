@@ -374,7 +374,7 @@ Respostas com JSON truncado por outros motivos (parse error "Unterminated string
 
 Para evitar chamadas redundantes à IA (custo e latência), o sistema implementa cache em **Redis** com as seguintes características:
 
-- **Chave determinística**: SHA-256 hash gerado a partir de `[promptVersion, title, description, location]` normalizados (lowercase, whitespace colapsado, CEP apenas dígitos, coordenadas com 4 decimais, JSON canonicalizado).
+- **Chave determinística**: SHA-256 hash gerado a partir de `[promptVersion, title, description, location]` normalizados (lowercase, whitespace colapsado, CEP apenas dígitos, endereço canonicalizado com chaves ordenadas).
 - **Versionamento**: o hash inclui `PROMPT_VERSION` (`v4.0.0`), então mudanças no prompt invalidam automaticamente o cache.
 - **TTL**: 24 horas (`SETEX`).
 - **Prefixo**: `ai-cache:` para isolamento no Redis.

@@ -40,12 +40,6 @@ describe('canonicalizeLocation', () => {
     expect(canonicalizeLocation('  Main  Street  ')).toBe('STR:main street');
   });
 
-  it('formats lat/lng object with 4 decimal precision', () => {
-    expect(canonicalizeLocation({ lat: -23.550520123, lng: -46.633308456 })).toBe(
-      'MAP:-23.5505,-46.6333',
-    );
-  });
-
   it('falls back to sorted JSON for unknown object shapes', () => {
     const result = canonicalizeLocation({ address: '123 St', city: 'SP' });
     expect(result).toMatch(/^OBJ:/v);

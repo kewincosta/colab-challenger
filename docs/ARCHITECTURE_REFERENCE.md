@@ -38,9 +38,9 @@ Project layout (core parts only):
 ### Domain Layer
 
 - Contains the **core model** and business rules.
-- `Report` entity encapsulates invariants (non-empty title/description, valid location) and behavior (`updateDescription`, `moveTo`). It also holds **classification job control** fields (`classificationStatus`, `classificationAttempts`, `lastClassificationError`) since these describe the report's processing lifecycle.
+- `Report` entity encapsulates invariants (non-empty title/description, valid location) and holds **classification job control** fields (`classificationStatus`, `classificationAttempts`, `lastClassificationError`) since these describe the report's processing lifecycle. Lifecycle methods (`startClassification()`, `completeClassification()`, `failClassification()`) encapsulate state transitions.
 - `ClassificationResult` entity stores the **AI classification output** (`category`, `priority`, `technicalSummary`) as a separate, immutable record with a `triageStatus` field (defaults to `PENDING`) for future manual review workflows. It has a 1:0..1 relationship with `Report` — created only when classification succeeds.
-- `Location` value object encapsulates rules around how a location is represented (string or structured object) and ensures validity.
+- `Location` value object encapsulates a structured address (`street`, `neighborhood`, `city`, `state`, `postcode`, optional `number`/`complement`) and ensures validity by requiring non-empty mandatory fields.
 - `TriageStatus` value object models the future manual triage workflow (currently only `PENDING`).
 - Domain is completely **framework-agnostic**: no NestJS decorators, no TypeORM imports, no HTTP knowledge.
 
@@ -105,7 +105,7 @@ The AI classification pipeline follows Clean Architecture strictly:
 ## 6. Scalability Considerations
 
 - **Horizontal scaling**: The NestJS app is stateless; state is persisted in PostgreSQL. Multiple instances can be run behind a load balancer.
-- **Database**: PostgreSQL with JSONB for `location` allows flexible schemas and future AI-enriched metadata without schema churn.
+- **Database**: PostgreSQL with JSONB for `location` stores the structured address object. Multiple instances can be run behind a load balancer.
 - **Module boundaries**: New bounded contexts (e.g., `triage`, `notifications`, `users`) can be added as new domain/application/infrastructure/presentation subtrees and NestJS modules.
 - **Performance**: Use cases keep logic local; database access is isolated in repositories, making it straightforward to optimize queries or introduce caching at the infrastructure layer.
 
@@ -170,7 +170,7 @@ Domain (entity.id)  ↔  ORM (entity.externalId)   — UUID exposed in the API
 `findById()` queries by `externalId`; `toOrmEntity()` resolves existing records by `externalId` to preserve the internal `id` on updates.
 
 - This separation follows **SRP**: Report holds what the citizen submitted + processing state; ClassificationResult holds what the AI produced + future triage state.
-- **JSONB location** provides flexibility for storing addresses and future AI-enriched geospatial metadata without schema changes.
+- **JSONB location** stores the structured address object (`street`, `neighborhood`, `city`, `state`, `postcode`) as a single column, avoiding multiple nullable address columns.
 - Redis is used for AI response caching via `RedisCacheAdapter`, sharing the same Redis instance as BullMQ.
 
 ## 9. Safe Extension Guidelines

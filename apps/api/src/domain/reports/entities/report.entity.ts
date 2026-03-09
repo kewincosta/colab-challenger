@@ -16,8 +16,8 @@ export interface ReportProps {
 export class Report {
   private readonly id?: string;
   private readonly title: ReportTitle;
-  private description: ReportDescription;
-  private location: Location;
+  private readonly description: ReportDescription;
+  private readonly location: Location;
   private readonly createdAt: Date;
   private classificationStatus: ClassificationStatus;
   private classificationAttempts: number;
@@ -40,16 +40,6 @@ export class Report {
 
   static restore(props: ReportProps, id: string): Report {
     return new Report(props, id);
-  }
-
-  // ── Mutation methods ────────────────────────────────────────────────
-
-  updateDescription(newDescription: string): void {
-    this.description = ReportDescription.create(newDescription);
-  }
-
-  moveTo(newLocation: Location): void {
-    this.location = newLocation;
   }
 
   // ── Classification lifecycle ────────────────────────────────────────

@@ -12,11 +12,11 @@ export function ThemeSwitcher() {
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="sm"
       onClick={toggleTheme}
       aria-label={ariaLabel}
-      className="gap-2 hover:bg-primary hover:text-primary-foreground dark:hover:bg-primary dark:hover:text-primary-foreground"
+      className="h-9 min-w-[90px] gap-2"
     >
       {isDark ? (
         <>
