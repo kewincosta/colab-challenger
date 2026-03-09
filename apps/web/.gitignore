@@ -30,3 +30,7 @@ packages
 pids
 .file-manifest
 .devcontainer/
+
+# Playwright
+test-results/
+playwright-report/

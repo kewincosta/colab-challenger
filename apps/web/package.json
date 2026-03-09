@@ -8,12 +8,17 @@
         "kill": "fuser -k 5000/tcp",
         "build": "tsc -b --noCheck && vite build",
         "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
         "typecheck": "tsc --noEmit",
         "check": "npm run typecheck && npm run lint",
+        "check:fix": "npm run typecheck && npm run lint:fix",
         "format": "prettier --write 'src/**/*.{ts,tsx,css}'",
         "format:check": "prettier --check 'src/**/*.{ts,tsx,css}'",
         "optimize": "vite optimize",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "test": "playwright test",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui"
     },
     "dependencies": {
         "@phosphor-icons/react": "^2.1.7",
@@ -40,6 +45,7 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.21.0",
+        "@playwright/test": "^1.58.2",
         "@tailwindcss/postcss": "^4.1.8",
         "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",

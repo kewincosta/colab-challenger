@@ -62,4 +62,5 @@ function Button({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- UI library exports variants alongside components
 export { Button, buttonVariants };

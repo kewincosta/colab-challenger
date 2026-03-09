@@ -13,14 +13,14 @@ export interface CepLookupState {
 }
 
 export interface UseCepLookupReturn extends CepLookupState {
-  lookup: (cep: string) => Promise<void>;
+  lookup: (cep: string) => void;
   clearError: () => void;
 }
 
 const DEBOUNCE_MS = 400;
 
 export function useCepLookup(): UseCepLookupReturn {
-  const [data, setData] = useState<ViaCepSuccessResponse | null>(null);
+  const [cepResult, setCepResult] = useState<ViaCepSuccessResponse | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
@@ -42,7 +42,7 @@ export function useCepLookup(): UseCepLookupReturn {
     setError(null);
   }, []);
 
-  const lookup = useCallback(async (cep: string) => {
+  const lookup = useCallback((cep: string) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -50,46 +50,42 @@ export function useCepLookup(): UseCepLookupReturn {
     const normalizedCep = cep.replace(/\D/g, '');
 
     if (normalizedCep.length !== 8) {
-      setData(null);
+      setCepResult(null);
       setError(null);
-      return await Promise.resolve();
+      return;
     }
 
-    return await new Promise<void>((resolve) => {
-      debounceTimerRef.current = window.setTimeout(async () => {
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
+    debounceTimerRef.current = window.setTimeout(async () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      abortControllerRef.current = new AbortController();
+
+      setIsLookingUp(true);
+      setError(null);
+
+      try {
+        const response: ViaCepResponse = await lookupCep(normalizedCep);
+
+        if (isViaCepError(response)) {
+          setCepResult(null);
+          setError('CEP_NOT_FOUND');
+        } else {
+          setCepResult(response);
+          setError(null);
         }
-
-        abortControllerRef.current = new AbortController();
-
-        setIsLookingUp(true);
-        setError(null);
-
-        try {
-          const response: ViaCepResponse = await lookupCep(normalizedCep);
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          if (isViaCepError(response)) {
-            setData(null);
-            setError('CEP_NOT_FOUND');
-          } else {
-            setData(response);
-            setError(null);
-          }
-        } catch {
-          setData(null);
-          setError('NETWORK_ERROR');
-        } finally {
-          setIsLookingUp(false);
-          resolve();
-        }
-      }, DEBOUNCE_MS);
-    });
+      } catch {
+        setCepResult(null);
+        setError('NETWORK_ERROR');
+      } finally {
+        setIsLookingUp(false);
+      }
+    }, DEBOUNCE_MS);
   }, []);
 
   return {
-    data,
+    data: cepResult,
     isLookingUp,
     error,
     lookup,

@@ -59,8 +59,6 @@ export const translations = {
       cityPlaceholder: 'Nome da cidade',
       stateLabel: 'Estado',
       statePlaceholder: 'UF',
-      referenceLabel: 'Ponto de referência (opcional)',
-      referencePlaceholder: 'Ex: Próximo ao mercado',
       submitButton: 'Enviar relato',
       submitting: 'Enviando...',
       lookingUpCep: 'Buscando endereço...',
@@ -74,6 +72,7 @@ export const translations = {
     validation: {
       titleRequired: 'O título é obrigatório',
       titleMinLength: 'O título deve ter pelo menos 5 caracteres',
+      titleMaxLength: 'O título deve ter no máximo 255 caracteres',
       descriptionRequired: 'A descrição é obrigatória',
       descriptionMinLength: 'A descrição deve ter pelo menos 15 caracteres',
       cepRequired: 'O CEP é obrigatório',
@@ -83,6 +82,7 @@ export const translations = {
       neighborhoodRequired: 'O bairro é obrigatório',
       cityRequired: 'A cidade é obrigatória',
       stateRequired: 'O estado é obrigatório',
+      stateInvalid: 'O estado deve ser uma sigla de 2 letras (ex: SP)',
     },
     errors: {
       submissionFailed: 'Erro ao enviar relato',
@@ -164,8 +164,6 @@ export const translations = {
       cityPlaceholder: 'City name',
       stateLabel: 'State',
       statePlaceholder: 'State',
-      referenceLabel: 'Reference point (optional)',
-      referencePlaceholder: 'E.g., Near the market',
       submitButton: 'Submit report',
       submitting: 'Submitting...',
       lookingUpCep: 'Looking up address...',
@@ -179,6 +177,7 @@ export const translations = {
     validation: {
       titleRequired: 'Title is required',
       titleMinLength: 'Title must be at least 5 characters',
+      titleMaxLength: 'Title must be at most 255 characters',
       descriptionRequired: 'Description is required',
       descriptionMinLength: 'Description must be at least 15 characters',
       cepRequired: 'Postal code is required',
@@ -188,6 +187,7 @@ export const translations = {
       neighborhoodRequired: 'Neighborhood is required',
       cityRequired: 'City is required',
       stateRequired: 'State is required',
+      stateInvalid: 'State must be a 2-letter abbreviation (e.g., SP)',
     },
     errors: {
       submissionFailed: 'Submission failed',

@@ -2,9 +2,8 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useI18n } from '@/shared/i18n/useI18n';
 import { Button } from '@/components/ui/button';
 import { ConfirmationSummary } from '@/features/reports/components/ConfirmationSummary';
-import { CheckCircleIcon, ArrowLeftIcon, BuildingsIcon } from '@phosphor-icons/react';
-import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
-import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher';
+import { CheckCircleIcon, ArrowLeftIcon } from '@phosphor-icons/react';
+import { AppHeader } from '@/shared/components/AppHeader';
 import type { StructuredLocation } from '@/features/reports/types/reportTypes';
 
 interface ConfirmationState {
@@ -14,12 +13,24 @@ interface ConfirmationState {
   classificationStatus: string;
 }
 
+function isConfirmationState(value: unknown): value is ConfirmationState {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'reportId' in value &&
+    'title' in value &&
+    'location' in value &&
+    'classificationStatus' in value
+  );
+}
+
 export function ConfirmationPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const routerState = useRouterState();
 
-  const state = routerState.location.state as unknown as ConfirmationState | undefined;
+  const rawState: unknown = routerState.location.state;
+  const state = isConfirmationState(rawState) ? rawState : undefined;
 
   const handleBackToHome = () => {
     void navigate({ to: '/' });
@@ -28,20 +39,7 @@ export function ConfirmationPage() {
   if (!state?.reportId) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card">
-          <div className="container mx-auto px-4 sm:px-8 py-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <BuildingsIcon className="h-8 w-8 text-primary" weight="fill" />
-                <h1 className="text-xl font-bold text-foreground">{t('header.siteName')}</h1>
-              </div>
-              <div className="flex flex-row items-center gap-3">
-                <LanguageSwitcher />
-                <ThemeSwitcher />
-              </div>
-            </div>
-          </div>
-        </header>
+        <AppHeader />
         <div
           className="flex items-center justify-center p-4"
           style={{ minHeight: 'calc(100vh - 73px)' }}
@@ -60,20 +58,7 @@ export function ConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 sm:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <BuildingsIcon className="h-8 w-8 text-primary" weight="fill" />
-              <h1 className="text-xl font-bold text-foreground">{t('header.siteName')}</h1>
-            </div>
-            <div className="flex flex-row items-center gap-3">
-              <LanguageSwitcher />
-              <ThemeSwitcher />
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
       <div className="container mx-auto px-4 sm:px-8 py-8 sm:py-12">
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="flex flex-col items-center text-center space-y-4">

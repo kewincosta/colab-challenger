@@ -19,6 +19,15 @@
   - [Integração com IA (Google Gemini)](#integração-com-ia-google-gemini)
   - [Cache de Classificação](#cache-de-classificação)
   - [Testes Automatizados](#testes-automatizados)
+- [Arquitetura do Frontend](#arquitetura-do-frontend)
+  - [Stack Técnico](#stack-técnico)
+  - [Organização por Features](#organização-por-features)
+  - [Formulários e Validação](#formulários-e-validação)
+  - [Sistema de Design](#sistema-de-design)
+  - [Internacionalização (i18n)](#internacionalização-i18n)
+  - [Tematização (Dark/Light)](#tematização-darklight)
+  - [Roteamento e Navegação](#roteamento-e-navegação)
+  - [Testes E2E (Playwright)](#testes-e2e-playwright)
 - [API — Endpoints](#api--endpoints)
 - [Estrutura de Pastas](#estrutura-de-pastas)
 - [Convenção de Idioma](#convenção-de-idioma)
@@ -411,6 +420,282 @@ npm run -w @colab-challenger/api test:cov
 
 ---
 
+## Arquitetura do Frontend
+
+### Stack Técnico
+
+O frontend é uma SPA (Single Page Application) construída com o seguinte stack:
+
+| Tecnologia | Versão | Propósito |
+|---|---|---|
+| **React** | 19 | Biblioteca de UI |
+| **TypeScript** | 5.7 | Tipagem estática |
+| **Vite** | 7 + SWC | Build tool e compilação rápida |
+| **TanStack Form** | 1.28 | Gerenciamento de formulários (headless, type-safe) |
+| **TanStack Router** | 1.163 | Roteamento client-side com tipagem |
+| **Zod** | 3.25 | Validação de schemas (Standard Schema) |
+| **Tailwind CSS** | 4 | Utility-first CSS |
+| **Radix UI** | — | Primitivos acessíveis (label, select, toast) |
+| **shadcn/ui** | New York | Componentes copiados (não instalados como dependência) |
+| **Phosphor Icons** | 2.1 | Biblioteca de ícones |
+| **Framer Motion** | 12.6 | Animações |
+| **Axios** | 1.13 | Cliente HTTP |
+| **Playwright** | 1.58 | Testes E2E |
+
+**Por que TanStack Form (e não React Hook Form)?**
+
+- Suporte nativo a **Standard Schema** (Zod 3.25+ sem adapter) — um `z.object()` é passado diretamente como `validators.onChange`, sem wrappers como `zodResolver()`.
+- API headless com controle total sobre renderização — sem componentes `<Controller>` ou `<FormProvider>`.
+- Tipagem end-to-end: o tipo do campo é inferido do schema, sem casts manuais.
+
+**Por que Vite + SWC (e não Webpack/Babel)?**
+
+- HMR em milissegundos (ESM nativo no dev, sem bundle).
+- SWC compila TypeScript/JSX ~20x mais rápido que Babel.
+- Configuração mínima: 2 plugins (`react-swc`, `tailwindcss`).
+
+---
+
+### Organização por Features
+
+O código segue uma organização **feature-based**, onde cada domínio funcional agrupa seus próprios componentes, hooks, serviços, tipos e validadores:
+
+```
+src/
+├── features/
+│   └── reports/                  # Feature: relatos urbanos
+│       ├── components/           # Componentes específicos da feature
+│       │   ├── ReportForm.tsx    # Formulário principal
+│       │   └── ConfirmationSummary.tsx  # Resumo pós-submissão
+│       ├── hooks/                # Lógica de estado e side-effects
+│       │   ├── useCepLookup.ts   # Busca de CEP com debounce
+│       │   └── useSubmitReport.ts # Submissão do relato
+│       ├── services/             # Clientes HTTP
+│       │   ├── reportsService.ts # POST /api/reports
+│       │   └── viaCepService.ts  # API ViaCEP (externa)
+│       ├── types/                # Interfaces e tipos
+│       │   └── reportTypes.ts    # Payloads e responses
+│       └── validators/           # Schemas de validação
+│           └── reportSchemas.ts  # Zod schemas com i18n
+├── pages/                        # Páginas (composição de features)
+│   ├── HomePage.tsx              # Hero + benefícios + formulário
+│   └── ConfirmationPage.tsx      # Sucesso + resumo + CTA
+├── shared/                       # Código compartilhado entre features
+│   ├── components/               # AppHeader, LanguageSwitcher, ThemeSwitcher
+│   ├── i18n/                     # Sistema de internacionalização
+│   └── theme/                    # Sistema de tematização
+├── components/ui/                # Primitivos de UI (shadcn/ui)
+├── hooks/                        # Hooks genéricos (useIsMobile, useToast)
+├── lib/                          # Utilitários puros (cn, formatCep, extractErrors)
+├── router/                       # Configuração de rotas
+└── styles/                       # CSS global e paleta de cores
+```
+
+**Por que feature-based (e não layer-based)?**
+
+- **Coesão**: tudo relacionado a "relatos" está em `features/reports/`. Um dev novo não precisa navegar entre `components/`, `hooks/`, `services/` espalhados na raiz.
+- **Escalabilidade**: adicionar uma nova feature (ex: `features/dashboard/`) não impacta e nem polui as existentes.
+- **Delete-friendly**: remover uma feature é deletar uma pasta, sem caçar imports em 10 diretórios diferentes.
+
+A camada `shared/` contém apenas código genuinamente transversal (i18n, theme, header). Componentes UI primitivos ficam em `components/ui/` por serem agnósticos de feature.
+
+---
+
+### Formulários e Validação
+
+O formulário de relatos é o ponto central do frontend. A arquitetura de validação segue um fluxo integrado:
+
+#### Zod Standard Schema + TanStack Form
+
+Os schemas de validação são definidos com **Zod 3.25** e passados diretamente ao TanStack Form via **Standard Schema** — sem adapters ou resolvers:
+
+```typescript
+// validators/reportSchemas.ts
+export const createFieldSchemas = (t: TranslationFn) => ({
+  title: z.string().min(5, t('validation.title.min')).max(255, t('validation.title.max')),
+  description: z.string().min(15, t('validation.description.min')),
+  cep: z.string().regex(/^\d{5}-?\d{3}$/, t('validation.cep.format')),
+  state: z.string().regex(/^[A-Z]{2}$/, t('validation.state.format')),
+  // ...
+})
+```
+
+As mensagens de erro são i18n-ready: `createFieldSchemas(t)` recebe a função de tradução e injeta diretamente nos schemas Zod. Isso evita mapeamento manual de códigos de erro para mensagens.
+
+#### CEP Auto-Fill com Debounce
+
+O hook `useCepLookup` encapsula a busca de endereço via API ViaCEP:
+
+1. Cidadão digita o CEP → input aplica máscara (`formatCep`: `01001000` → `01001-000`).
+2. Ao completar 8 dígitos, o debounce (400ms) dispara o lookup.
+3. Em caso de sucesso, os campos rua, bairro, cidade e estado são preenchidos automaticamente.
+4. Em caso de CEP não encontrado, um toast de aviso é exibido.
+5. Requisições em voo são canceladas via `AbortController` ao digitar um novo CEP.
+
+#### Componentes Reutilizáveis de Formulário
+
+Para evitar repetição (~15 linhas por campo × 9 campos), o projeto extrai dois componentes:
+
+- **`FormField`**: wrapper genérico com label, asterisco de obrigatório, helper text e mensagem de erro.
+- **`FormInputField`**: especialização que conecta `FormField` + `Input` ao estado do TanStack Form e extrai erros do Zod automaticamente via `extractErrors()`.
+
+---
+
+### Sistema de Design
+
+O frontend utiliza **shadcn/ui** (variante New York) como base de componentes, combinado com **Radix UI** para acessibilidade e **Tailwind CSS 4** para estilização:
+
+| Componente | Base | Características |
+|---|---|---|
+| Button | CVA | 6 variantes (default, destructive, outline, secondary, ghost, link), 4 tamanhos, spinner de loading |
+| Input | HTML + Tailwind | Focus ring, estados `aria-invalid`, composição livre |
+| Select | Radix | Acessível (keyboard nav, screen readers), scroll buttons, separator |
+| Toast | Radix | Variantes (default, destructive), limite de 1 visível, reducer-based |
+| Card | Tailwind | Header, Title, Description, Action, Content, Footer |
+| Alert | CVA + ícones | 6 variantes com ícones automáticos (info, success, warning, error) |
+| FormField | Custom | Label com asterisco, helper text, erro — agnóstico de form library |
+
+**Por que shadcn/ui (e não Material UI, Ant Design ou Chakra)?**
+
+- **Ownership de código**: componentes são copiados para `components/ui/`, não instalados como dependência. Customização total sem override de estilos internos.
+- **Zero runtime**: sem CSS-in-JS, sem theme provider pesado. Apenas classes Tailwind.
+- **Composição**: cada componente é um primitivo pequeno (~30–80 linhas), composto livremente sem hierarquia de `<ThemeProvider>` → `<CssBaseline>` → `<Component>`.
+- **Acessibilidade nativa**: Radix primitives garantem ARIA roles, keyboard navigation e focus management out-of-the-box.
+
+#### Sistema de Cores (OKLCH)
+
+As cores são definidas com **OKLCH** (Oklch color space) — um espaço de cor perceptualmente uniforme, alternativa moderna ao HSL/hex:
+
+```css
+:root {
+  --background: oklch(0.98 0 0);
+  --primary: oklch(0.45 0.15 250);
+  --destructive: oklch(0.55 0.22 25);
+}
+.dark {
+  --background: oklch(0.12 0.02 250);
+  --primary: oklch(0.55 0.18 250);
+}
+```
+
+OKLCH garante que cores com a mesma lightness pareçam igualmente luminosas ao olho humano (diferente de HSL, onde `hsl(60, 100%, 50%)` amarelo parece muito mais claro que `hsl(240, 100%, 50%)` azul). A paleta é complementada por **Radix Colors** para tons semânticos.
+
+---
+
+### Internacionalização (i18n)
+
+O sistema de i18n é implementado via **Context API** + **localStorage**, sem dependência de bibliotecas como `react-intl` ou `i18next`:
+
+| Aspecto | Detalhe |
+|---|---|
+| Idiomas | `ptBR` (padrão), `enUS` |
+| Chaves | Hierárquicas: `t('form.labels.title')` |
+| Persistência | `localStorage` (chave: `municipal-service-lang`) |
+| Cobertura | ~80 chaves: header, hero, benefits, form, validation, errors, confirmation |
+| Integração Zod | `createFieldSchemas(t)` injeta mensagens traduzidas nos schemas |
+
+**Por que Context API (e não react-intl/i18next)?**
+
+- O app tem **2 idiomas** e **~80 chaves**. Bibliotecas como i18next adicionam ~40KB gzipped, suporte a pluralização complexa, namespaces, lazy loading de dicionários — funcionalidades desnecessárias para este escopo.
+- A implementação completa (provider, hook, traduções) soma ~200 linhas. O custo de manutenção é menor que o de aprender e configurar i18next.
+- A função `t()` resolve chaves hierárquicas com travessia recursiva de objetos — `t('hero.title')` acessa `translations.ptBR.hero.title`.
+
+O componente `LanguageSwitcher` utiliza um `<Select>` Radix com ícone de globo, persistindo a preferência no `localStorage`.
+
+---
+
+### Tematização (Dark/Light)
+
+O sistema de temas utiliza **CSS variables** com toggle baseado em classe no `<html>`:
+
+1. O `ThemeProvider` lê a preferência do `localStorage` (chave: `municipal-service-theme`, default: `dark`).
+2. Aplica `class="light"` ou `class="dark"` no elemento `<html>`.
+3. Tailwind CSS 4 resolve variantes escuras via `@custom-variant dark (&:is(.dark *))`.
+4. Todas as cores de componentes referenciam CSS variables (`var(--background)`, `var(--primary)`), que mudam conforme a classe ativa.
+
+O toggle é um botão ghost com ícone Sun/Moon (Phosphor Icons), acessível via `aria-label` i18n.
+
+---
+
+### Roteamento e Navegação
+
+O app possui **2 rotas** gerenciadas pelo **TanStack Router**:
+
+| Rota | Página | Propósito |
+|---|---|---|
+| `/` | `HomePage` | Hero, benefícios e formulário de relato |
+| `/confirmation` | `ConfirmationPage` | Confirmação pós-submissão com resumo |
+
+**Passagem de dados via navigation state:**
+
+Após submissão bem-sucedida, o frontend navega para `/confirmation` passando os dados do relato via `navigate({ to: '/confirmation', state: { reportId, title, location, classificationStatus } })`. Isso evita:
+
+- **Global state** (Redux/Zustand) para dados efêmeros usados apenas uma vez.
+- **Query params** para dados complexos (objeto `location` com 7 campos).
+- **Chamada extra à API** para buscar dados que já estão em memória.
+
+A `ConfirmationPage` valida o state recebido com um **type guard** (`isConfirmationState()`). Se o usuário acessar `/confirmation` diretamente (sem state), um fallback é exibido com mensagem "sem dados" e botão para voltar ao formulário.
+
+---
+
+### Testes E2E (Playwright)
+
+O frontend utiliza **Playwright** com **Chromium** para testes end-to-end, seguindo os princípios **F.I.R.S.T** (Fast, Independent, Repeatable, Self-validating, Timely):
+
+#### Arquitetura dos Testes
+
+```
+e2e/
+├── fixtures/
+│   ├── test-data.ts        # Dados determinísticos (CEP, relato, respostas mock)
+│   └── mock-routes.ts      # Funções reutilizáveis para interceptar ViaCEP e API
+├── pages/
+│   ├── home.page.ts        # Page Object: formulário, campos, ações
+│   └── confirmation.page.ts # Page Object: resumo, CTA, fallback
+└── tests/
+    ├── form-validation.spec.ts    # Validação de campos (6 testes)
+    ├── cep-lookup.spec.ts         # Máscara, auto-fill, CEP não encontrado (3 testes)
+    ├── report-submission.spec.ts  # Happy path e erro de API (2 testes)
+    ├── i18n.spec.ts               # Troca de idioma e persistência (4 testes)
+    ├── theme.spec.ts              # Alternância light/dark (3 testes)
+    ├── confirmation.spec.ts       # Estado presente e fallback (2 testes)
+    └── accessibility.spec.ts      # ARIA labels, form labels, responsive (5 testes)
+```
+
+#### Mocking Determinístico
+
+Todas as chamadas de rede são interceptadas via `page.route()` com fixtures estáticas, garantindo **determinismo** e **independência** de serviços externos:
+
+- **ViaCEP**: `mockViaCep(page)` intercepta `**/viacep.com.br/**` e retorna dados fixos (Praça da Sé, São Paulo).
+- **API Backend**: `mockReportsApi(page)` intercepta `**/api/reports` e retorna um report com `classificationStatus: PENDING`.
+- **Cenários de erro**: `mockViaCepNotFound(page)` e `mockReportsApiError(page, 500)` simulam falhas.
+
+Isso elimina dependência de internet, backend rodando, ou estado do banco — os testes rodam em isolamento completo.
+
+#### Page Object Model (POM)
+
+Cada página tem um objeto dedicado com locators e métodos de interação, evitando selectors duplicados nos testes:
+
+```typescript
+// Exemplo de uso no teste
+const home = new HomePage(page)
+await home.goto()
+await mockApiRoutes(page)
+await home.fillReport(VALID_REPORT)
+await home.fillCep(VALID_CEP)
+await home.submit()
+```
+
+```bash
+# Executar testes E2E
+npm run test:web
+
+# Executar com UI visual
+npm run test:web:ui
+```
+
+---
+
 ## API — Endpoints
 
 ### `POST /api/reports`
@@ -487,11 +772,19 @@ colab-challenger/
 │   │       ├── unit/                  # 22 arquivos de testes unitários
 │   │       └── integration/           # Testes E2E com SuperTest
 │   └── web/                           # Frontend React
-│       └── src/
-│           ├── features/reports/      # Formulário, serviços, hooks, validadores
-│           ├── pages/                 # HomePage, ConfirmationPage
-│           ├── shared/                # i18n, theme, componentes reutilizáveis
-│           └── router/                # TanStack Router
+│       ├── src/
+│       │   ├── features/reports/      # Componentes, hooks, serviços, validadores, tipos
+│       │   ├── pages/                 # HomePage, ConfirmationPage
+│       │   ├── shared/                # i18n, theme, componentes reutilizáveis
+│       │   ├── components/ui/         # Primitivos shadcn/ui (Button, Input, Select, Toast...)
+│       │   ├── hooks/                 # useIsMobile, useToast
+│       │   ├── lib/                   # Utilitários puros (cn, formatCep, extractErrors)
+│       │   ├── router/                # TanStack Router (2 rotas)
+│       │   └── styles/                # Paleta de cores OKLCH
+│       └── e2e/                       # Testes Playwright
+│           ├── fixtures/              # Dados mock e interceptadores de rota
+│           ├── pages/                 # Page Objects (Home, Confirmation)
+│           └── tests/                 # 7 specs (~25 testes)
 ├── docs/                              # Documentação de referência
 ├── scripts/                           # dev.sh, start_local.sh
 ├── docker-compose.yml                 # PostgreSQL, Redis, App

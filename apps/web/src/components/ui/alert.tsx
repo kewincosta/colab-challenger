@@ -89,7 +89,8 @@ function AlertBanner({
   message: React.ReactNode;
   className?: string;
 }) {
-  const IconComp = variant && variant in iconMap ? iconMap[variant as keyof typeof iconMap] : null;
+  const isIconVariant = (v: string): v is keyof typeof iconMap => v in iconMap;
+  const IconComp = isIconVariant(variant) ? iconMap[variant] : null;
 
   return (
     <Alert variant={variant} className={className}>
@@ -100,5 +101,6 @@ function AlertBanner({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- UI library exports variants alongside components
 export { Alert, AlertTitle, AlertDescription, AlertBanner, alertVariants };
 export type { AlertVariant };

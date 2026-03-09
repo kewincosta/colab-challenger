@@ -18,7 +18,7 @@ function getNestedValue(obj: Record<string, string | TranslationValue>, path: st
   let current: string | TranslationValue = obj;
 
   for (const key of keys) {
-    if (typeof current === 'object' && current !== null && key in current) {
+    if (typeof current === 'object' && key in current) {
       current = current[key];
     } else {
       return path;
@@ -30,8 +30,9 @@ function getNestedValue(obj: Record<string, string | TranslationValue>, path: st
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Language>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'ptBR' || stored === 'enUS' ? stored : 'ptBR';
+    const stored: string | null = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'ptBR' || stored === 'enUS') return stored;
+    return 'ptBR';
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook must be co-located with its provider
 export function useI18n() {
   const context = useContext(I18nContext);
   if (!context) {
