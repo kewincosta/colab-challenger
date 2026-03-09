@@ -20,7 +20,10 @@ export async function mockApiRoutes(page: Page) {
 /**
  * Mocks the ViaCEP API to return a successful address lookup.
  */
-export async function mockViaCep(page: Page, response = VIACEP_SUCCESS_RESPONSE) {
+export async function mockViaCep(
+  page: Page,
+  response: Record<string, unknown> = VIACEP_SUCCESS_RESPONSE,
+) {
   await page.route('**/viacep.com.br/ws/*/json/**', (route) =>
     route.fulfill({
       status: 200,
