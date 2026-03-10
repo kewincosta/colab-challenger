@@ -2,6 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import type { StructuredLocation } from '../../../domain/reports/value-objects/location.value-object';
 import { StructuredLocationDto } from './create-report.dto';
 
+/**
+ * Swagger documentation class for report response.
+ * Read-only DTO — no validation needed (outbound only).
+ */
+
 export class ReportResponseDto {
   @ApiProperty({
     description: 'Unique identifier of the report (UUID v4)',

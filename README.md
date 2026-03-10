@@ -68,21 +68,32 @@ Copie `.env.example` para `.env` na raiz do projeto e preencha os valores:
 cp .env.example .env
 ```
 
+### Backend (API)
+
 | Variável | Obrigatória | Default | Descrição |
 |---|---|---|---|
+| `NODE_ENV` | Não | `development` | Ambiente de execução (`development`, `production`) |
 | `PORT` | Não | `3000` | Porta do servidor HTTP |
-| `DB_HOST` | Não | `postgres` | Host do PostgreSQL |
-| `DB_PORT` | Não | `5432` | Porta do PostgreSQL |
-| `DB_USER` | Não | `postgres` | Usuário do banco |
-| `DB_PASSWORD` | Não | `postgres` | Senha do banco |
-| `DB_NAME` | Não | `urban_triage` | Nome do banco de dados |
-| `REDIS_HOST` | Não | `localhost` | Host do Redis |
-| `REDIS_PORT` | Não | `6379` | Porta do Redis |
+| `DB_HOST` | **Sim**¹ | `localhost` | Host do PostgreSQL |
+| `DB_PORT` | **Sim**¹ | `5432` | Porta do PostgreSQL |
+| `DB_USER` | **Sim**¹ | `postgres` | Usuário do banco |
+| `DB_PASSWORD` | **Sim**¹ | `postgres` | Senha do banco |
+| `DB_NAME` | **Sim**¹ | `urban_triage` | Nome do banco de dados |
+| `REDIS_HOST` | **Sim**¹ | `localhost` | Host do Redis |
+| `REDIS_PORT` | **Sim**¹ | `6379` | Porta do Redis |
 | `GEMINI_API_KEY` | **Sim** | — | Chave de API do Google Gemini |
 | `GEMINI_MODEL` | Não | `gemini-3-flash-preview` | Modelo Gemini a utilizar |
 | `GEMINI_TIMEOUT_MS` | Não | `30000` | Timeout por requisição à IA (ms) |
 
-> Todas as variáveis são validadas no startup via schema Zod (`env.validation.ts`). Se alguma obrigatória estiver ausente ou inválida, a API imprime uma tabela de erros e encerra imediatamente.
+> ¹ Possuem defaults que funcionam **apenas** para desenvolvimento local com o Docker Compose fornecido. Em qualquer outro ambiente (produção, staging, Docker Compose customizado), **devem ser configuradas explicitamente**. Sem PostgreSQL e Redis acessíveis com as credenciais corretas, a API não inicia e o processamento de fila não funciona.
+
+### Frontend (Web)
+
+| Variável | Obrigatória | Default | Descrição |
+|---|---|---|---|
+| `VITE_API_URL` | Não | `http://localhost:3000/api` | URL base da API consumida pelo frontend |
+
+> Todas as variáveis do backend são validadas no startup via schema Zod (`env.validation.ts`). Se alguma obrigatória estiver ausente ou inválida, a API imprime uma tabela de erros e encerra imediatamente.
 
 ---
 
@@ -149,7 +160,9 @@ Isso sobe PostgreSQL, Redis e a API em containers (build multi-stage).
 
 ## Resumo do Fluxo
 
-O cidadão preenche um formulário no frontend informando título, descrição e endereço estruturado (com busca automática de CEP via ViaCEP). Ao submeter, o frontend envia um `POST /api/reports` para o backend. O backend valida o payload com `class-validator`, cria a entidade `Report` com seus Value Objects (título, descrição, localização), persiste no PostgreSQL via TypeORM e enfileira um job de classificação no BullMQ/Redis. O report é retornado ao client com `classificationStatus: PENDING`. Em background, um worker consome o job, envia o relato ao Google Gemini com um prompt estruturado (taxonomia de 9 categorias, regras de prioridade, anti-alucinação, segurança contra prompt injection), recebe um JSON validado por Zod schema, e persiste o resultado como `ClassificationResult`. Se a IA retornar JSON inválido, o sistema tenta um **repair prompt** uma vez antes de falhar. Falhas são reprocessadas com backoff exponencial (3 tentativas, delay de 3s × 2^n). Resultados idênticos são cacheados em Redis por 24h usando hash SHA-256 do conteúdo do relato.
+O cidadão preenche um formulário no frontend informando título, descrição e endereço estruturado (com busca automática de CEP via ViaCEP). Ao submeter, o frontend envia um `POST /api/reports` para o backend. O backend valida o payload com `Zod schema`, cria a entidade `Report` com seus Value Objects (título, descrição, localização), persiste no PostgreSQL via TypeORM e enfileira um job de classificação no BullMQ/Redis. O report é retornado ao client com `classificationStatus: PENDING`. Em background, um worker consome o job, envia o relato ao Google Gemini com um prompt estruturado (taxonomia de 9 categorias, regras de prioridade, anti-alucinação, segurança contra prompt injection), recebe um JSON validado por Zod schema, e persiste o resultado como `ClassificationResult`. Se a IA retornar JSON inválido, o sistema tenta um **repair prompt** uma vez antes de falhar. Falhas são reprocessadas com backoff exponencial (3 tentativas, delay de 3s × 2^n). Resultados idênticos são cacheados em Redis por 24h usando hash SHA-256 do conteúdo do relato.
+
+> **Por que Zod (e não class-validator)?** O projeto utiliza Zod como biblioteca **única** de validação em todas as camadas — DTOs HTTP, resposta da IA, variáveis de ambiente e frontend (React + TanStack Form via Standard Schema). Isso garante single source of truth entre tipo TypeScript e regra de validação (`z.infer<typeof schema>`), elimina dependências extras (`class-validator`, `class-transformer`, `reflect-metadata` para decorators), e permite composição de schemas entre front e back no monorepo.
 
 ---
 
@@ -171,7 +184,7 @@ sequenceDiagram
     Cidadão->>Web: Preenche formulário de relato
     Web->>Web: Busca CEP via ViaCEP (auto-fill)
     Web->>API: POST /api/reports
-    API->>API: Valida payload (class-validator)
+    API->>API: Valida payload (Zod schema)
     API->>DB: Persiste Report (status: PENDING)
     API->>Queue: Enfileira job classify-report
     API-->>Web: 201 Created (classificationStatus: PENDING)
@@ -393,7 +406,7 @@ O projeto utiliza **Vitest** (com SWC para transpilação rápida) e segue a pir
 - **Application**: Use Cases testados com mocks injetados — `CreateReportUseCase`, `ProcessClassificationUseCase` (happy path, idempotência, falha), `ClassifyReportUseCase` (cache hit, repair retry, dupla falha, timeout, safety block).
 - **Application/AI**: prompt builder (output verification), normalization (SHA-256 determinism), validators (Zod schema), mapper.
 - **Infrastructure**: mapeamento de/para ORM entities, Gemini client (mocks do SDK), Redis cache adapter.
-- **Presentation**: controller (delegação ao use case), validação de DTOs.
+- **Presentation**: controller (delegação ao use case), schemas Zod de validação de DTOs.
 - **Shared**: validação de variáveis de ambiente, domain exception filter.
 
 #### Testes de Integração (2 arquivos)

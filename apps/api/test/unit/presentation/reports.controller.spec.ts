@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ReportsController } from '../../../src/presentation/http/controllers/reports.controller';
 import type { CreateReportUseCase } from '../../../src/application/reports/use-cases/create-report.use-case';
-import type { CreateReportDto } from '../../../src/presentation/http/dto/create-report.dto';
+import type { CreateReportInput } from '../../../src/presentation/http/dto/create-report.schema';
 
 const VALID_LOCATION = {
   street: 'Praça da Sé',
@@ -30,7 +30,7 @@ describe('ReportsController', () => {
     // Arrange
     const useCase = createMockCreateReportUseCase();
     const controller = new ReportsController(useCase);
-    const dto: CreateReportDto = {
+    const dto: CreateReportInput = {
       title: 'Broken streetlight',
       description: 'Light out for 3 days.',
       location: VALID_LOCATION,
@@ -62,7 +62,7 @@ describe('ReportsController', () => {
       state: 'SP',
       postcode: '01001-000',
     };
-    const dto: CreateReportDto = {
+    const dto: CreateReportInput = {
       title: 'Pothole',
       description: 'Deep pothole.',
       location: locationWithoutNumber,

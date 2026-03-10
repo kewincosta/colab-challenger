@@ -1,16 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import type { CreateReportInput, StructuredLocationInput } from './create-report.schema';
 
-/** Structured address — the only accepted location format. */
-export class StructuredLocationDto {
+/**
+ * Swagger documentation class for structured location.
+ *
+ * Validation is handled by the Zod schema (create-report.schema.ts).
+ * This class exists solely for OpenAPI spec generation via @nestjs/swagger.
+ */
+export class StructuredLocationDto implements StructuredLocationInput {
   @ApiProperty({
     description: 'Street or avenue name',
     example: 'Praça da Sé',
     minLength: 1,
   })
-  @IsString()
-  @IsNotEmpty()
   street!: string;
 
   @ApiPropertyOptional({
@@ -18,8 +20,6 @@ export class StructuredLocationDto {
     example: '123',
     nullable: true,
   })
-  @IsString()
-  @IsOptional()
   number?: string;
 
   @ApiPropertyOptional({
@@ -27,8 +27,6 @@ export class StructuredLocationDto {
     example: 'Bloco B',
     nullable: true,
   })
-  @IsString()
-  @IsOptional()
   complement?: string;
 
   @ApiProperty({
@@ -36,8 +34,6 @@ export class StructuredLocationDto {
     example: 'Sé',
     minLength: 1,
   })
-  @IsString()
-  @IsNotEmpty()
   neighborhood!: string;
 
   @ApiProperty({
@@ -45,8 +41,6 @@ export class StructuredLocationDto {
     example: 'São Paulo',
     minLength: 1,
   })
-  @IsString()
-  @IsNotEmpty()
   city!: string;
 
   @ApiProperty({
@@ -56,8 +50,6 @@ export class StructuredLocationDto {
     maxLength: 2,
     pattern: '^[A-Z]{2}$',
   })
-  @IsString()
-  @IsNotEmpty()
   state!: string;
 
   @ApiProperty({
@@ -65,20 +57,22 @@ export class StructuredLocationDto {
     example: '01001-000',
     pattern: '^\\d{5}-?\\d{3}$',
   })
-  @IsString()
-  @IsNotEmpty()
   postcode!: string;
 }
 
-export class CreateReportDto {
+/**
+ * Swagger documentation class for report creation.
+ *
+ * Validation is handled by the Zod schema (create-report.schema.ts).
+ * This class exists solely for OpenAPI spec generation via @nestjs/swagger.
+ */
+export class CreateReportDto implements CreateReportInput {
   @ApiProperty({
     description: 'Short title summarizing the urban issue',
     example: 'Buraco na Rua Principal',
     minLength: 1,
     maxLength: 255,
   })
-  @IsString()
-  @IsNotEmpty()
   title!: string;
 
   @ApiProperty({
@@ -87,8 +81,6 @@ export class CreateReportDto {
     example: 'Buraco grande próximo ao cruzamento causando congestionamento.',
     minLength: 1,
   })
-  @IsString()
-  @IsNotEmpty()
   description!: string;
 
   @ApiProperty({
@@ -103,7 +95,5 @@ export class CreateReportDto {
       postcode: '01001-000',
     },
   })
-  @ValidateNested()
-  @Type(() => StructuredLocationDto)
   location!: StructuredLocationDto;
 }

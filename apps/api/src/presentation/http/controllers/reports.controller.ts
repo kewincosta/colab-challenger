@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UsePipes } from '@nestjs/common';
 import {
   ApiCreatedResponse,
   ApiOperation,
@@ -6,10 +6,14 @@ import {
   ApiBadRequestResponse,
   ApiUnprocessableEntityResponse,
   ApiInternalServerErrorResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { CreateReportUseCase } from '../../../application/reports/use-cases/create-report.use-case';
 import { CreateReportDto } from '../dto/create-report.dto';
+import type { CreateReportInput } from '../dto/create-report.schema';
+import { createReportSchema } from '../dto/create-report.schema';
 import { ReportResponseDto } from '../dto/report-response.dto';
+import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -138,7 +142,9 @@ export class ReportsController {
       },
     },
   })
-  async createReport(@Body() body: CreateReportDto): Promise<ReportResponseDto> {
+  @ApiBody({ type: CreateReportDto })
+  @UsePipes(new ZodValidationPipe(createReportSchema))
+  async createReport(@Body() body: CreateReportInput): Promise<ReportResponseDto> {
     const result = await this.createReportUseCase.execute({
       title: body.title,
       description: body.description,

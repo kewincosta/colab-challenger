@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import { type INestApplication, Module, ValidationPipe } from '@nestjs/common';
+import { type INestApplication, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -58,15 +58,6 @@ describe('Reports API (integration)', () => {
     app = moduleRef.createNestApplication();
 
     app.setGlobalPrefix('api');
-
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        forbidNonWhitelisted: true,
-        transformOptions: { enableImplicitConversion: true },
-      }),
-    );
 
     await app.init();
   });
